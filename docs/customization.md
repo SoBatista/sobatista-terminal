@@ -12,7 +12,7 @@ The palette has a narrow role for every color:
 | Terminal green | `#00E68A` | Success, identity, staged and ahead Git state. |
 | Ice cyan | `#5EEBFF` | Directory and restrained runtime highlights. |
 | Teal | `#22C7A9` | Containers and secondary accents. |
-| Main text | `#D6E7E9` | Primary readable content and the `pkg` project version. |
+| Main text | `#D6E7E9` | Primary readable content and the project version. |
 | Muted text | `#64748B` | Duration, untracked, stashed, behind, inactive UI. |
 | Warning amber | `#F5C451` | Modified and read-only (dirty) state. |
 | Error red | `#FF4D5A` | Failed commands, conflicts, divergence, deletions. |
@@ -43,12 +43,15 @@ only after a failing command. Keep `git_status` styling within the palette:
 amber for modified, green for staged/ahead, muted for untracked/stashed/behind,
 and red for conflicts, divergence, and deletions.
 
-The `package` module shows `pkg v<version>` in neutral main text, read from the
+The `package` module shows `v<version>` in neutral main text, read from the
 project manifest by Starship — it never runs project code, a package manager, or
-the network. It is deliberately distinct from the language runtime: `python`
-renders `py<version>` (with `#venv` when active), the interpreter version, not
-the project release. Both share `bg:secondary` and vanish outside their project
-type, so the connected bar stays intact.
+the network. `version_format = "v${raw}"` adds the `v` prefix; there is no label
+or icon so it stays compact. It shares `bg:secondary` and vanishes outside a
+versioned project, so the connected bar stays intact. Language and runtime
+version modules (`python`, `nodejs`, `rust`, …) are intentionally left out of
+the top-level `format` so the project version is the prompt's only version-like
+value; the runtimes themselves are untouched and reported by `python3 --version`
+and friends.
 
 Validate after editing:
 
@@ -108,25 +111,47 @@ printf '@import url("file://%s/.config/terminator/gtk.css");\n' "$HOME" \
 Restart Terminator to apply it. Remove that single `@import` line to revert. The
 rule is scoped to Terminator windows and does not affect other applications.
 
-### Background opacity
+### Background opacity and the solid profile
 
-The shipped default is a fully opaque solid `#070B0D`. This is deliberate: a
-solid background keeps text at maximum contrast and, in a security context,
-never leaks the desktop behind the terminal into a screen share or screenshot.
-
-If you prefer the subtle "see-through" depth, make the background slightly
-transparent in `[[default]]` of `config/terminator/config` (and your installed
-`~/.config/terminator/config`):
+The shipped `default` profile is **subtly transparent** — near-black Black Ice
+with a faint hint of the desktop behind it:
 
 ```ini
     background_type = transparent
-    background_darkness = 0.92
+    background_darkness = 0.94
+    background_color = "#070B0D"
 ```
 
-`background_darkness = 0.92` keeps the terminal ~92% opaque (a hint of the
-desktop shows through); lower it further for more transparency. Restart
-Terminator to apply. Prefer the solid default whenever you may share your
-screen. The README hero is captured at full opacity for text contrast.
+`background_darkness = 0.94` keeps the terminal ~94% opaque, so the `#070B0D`
+appearance and text contrast are preserved while the background is gently
+see-through. Lower it for more transparency; raise it toward `1.0` for less.
+Restart Terminator to apply a change.
+
+A second profile, **`BlackIce-Solid`**, is fully opaque for when transparency is
+a liability:
+
+```ini
+    background_type = solid
+    background_color = "#070B0D"
+```
+
+Prefer `BlackIce-Solid` for screenshots, livestreaming, screen sharing,
+presentations, and any time sensitive desktop content sits behind the terminal —
+a transparent background can leak whatever is behind the window. Launch an
+isolated process on that profile with:
+
+```bash
+terminator --no-dbus --profile=BlackIce-Solid
+```
+
+Terminal background opacity is a Terminator profile setting and is unrelated to
+the shell's `SOBATISTA_SCREENSHOT_MODE`, which only changes the displayed prompt
+identity. They are separate concerns. Note too that full-screen applications
+which paint their own background — Codex, Claude, editors, pagers such as
+`less` — can appear opaque even while the Terminator profile is transparent.
+
+The `AI-Workbench` layout uses the transparent `default` profile and keeps the
+muted slate pane separators.
 
 ## Local shell overrides
 

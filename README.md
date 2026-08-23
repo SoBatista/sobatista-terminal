@@ -107,6 +107,16 @@ terminator -p default
 terminator -l AI-Workbench
 ```
 
+The `default` profile is subtly transparent (near-black `#070B0D` at 94 %
+opacity). A fully opaque **`BlackIce-Solid`** profile is included for
+screenshots, screen sharing, livestreaming, presentations, or working over
+sensitive content — a transparent background can reveal what is behind the
+window:
+
+```bash
+terminator --no-dbus --profile=BlackIce-Solid
+```
+
 `AI-Workbench` opens one large left pane and two stacked right panes. See
 [customization](docs/customization.md) before changing split ratios or colors.
 
@@ -120,18 +130,20 @@ separators, and there is no clock:
 - **Directory** — the path, shortened to its last three components.
 - **Git branch** — only inside a repository.
 - **Git state** — only the counters that currently apply.
-- **Project version** — `pkg v<version>`, read from the project manifest
+- **Project version** — `v<version>`, read from the project manifest
   (PEP 621 `pyproject.toml`, `Cargo.toml`, `package.json`, …), only when one
   declares a version.
-- **Language runtime** — e.g. `py<version>` for the active Python interpreter
-  (with `#venv` when a virtualenv is active), only in that project type.
 
-Segments render in this order: identity, directory, Git branch, Git state,
-project version, language runtime, then the conditional command duration and
-failure status. A Python project therefore reads like:
+Language and runtime version modules (Python, Node.js, Rust, …) are
+intentionally omitted to keep the bar compact and to leave the project version
+as the prompt's only version-like value; check runtimes explicitly with
+`python3 --version`, `node --version`, or `rustc --version`. Segments render in
+this order: identity, directory, Git branch, Git state, project version, then
+the conditional command duration and failure status. A project with a versioned
+manifest therefore reads like:
 
 ```text
-sobatista@blackice  …/sobatista-ai  main  !5?20  pkg v0.1.0  py3.13.5
+sobatista@blackice  …/sobatista-ai  main  !5?20  v0.1.0.dev0
 ```
 
 The prompt character sits on its own line: a green `❯` after success, and a red
@@ -147,13 +159,11 @@ after a command slower than two seconds.
 | `✘N` | N deleted | `*N` | N stashed |
 
 Green marks progress, amber a dirty working tree, and red a conflict,
-divergence, or deletion. Two more segments carry version state, kept distinct
-from Git and from each other:
+divergence, or deletion. One more segment carries the project version:
 
 | Segment | Meaning |
 | --- | --- |
-| `pkg v0.1.0` | project/package version from its manifest — **not** the package-manager version |
-| `py3.13.5` | active Python runtime version — **not** the application release |
+| `v0.1.0.dev0` | current project/package version read from its supported manifest — **not** the package-manager version |
 | `!5` | five modified tracked files |
 | `?20` | twenty untracked files |
 

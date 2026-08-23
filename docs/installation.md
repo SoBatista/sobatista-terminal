@@ -156,6 +156,13 @@ termhelp
 terminator -l AI-Workbench
 ```
 
+The Terminator configuration ships two profiles: the subtly transparent
+`default` (near-black `#070B0D` at 94 % opacity) and a fully opaque
+`BlackIce-Solid`. Use the solid profile for screenshots, screen sharing, and
+sensitive contexts: `terminator --no-dbus --profile=BlackIce-Solid`. Terminal
+transparency is a Terminator profile setting and is independent of the shell's
+`SOBATISTA_SCREENSHOT_MODE`, which only changes the displayed prompt identity.
+
 If Ollama was installed but its API was stopped, the installer does not start a
 hidden background process. Start the service explicitly, verify with
 `llm_check`, then pull the intended model.

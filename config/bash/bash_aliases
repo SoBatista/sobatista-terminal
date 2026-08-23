@@ -874,9 +874,10 @@ EOF
   A clean branch shows its name alone. Green means progress, amber a dirty
   tree, red a conflict, divergence, or deletion.
 
-  Version modules (not Git):
-    pkg vX   project/package version from the manifest (not the package manager)
-    pyX      active Python runtime version (not the application release)
+  Project version (not Git):
+    vX   current project/package version from its manifest (not the package manager)
+  Language/runtime versions are omitted to keep the prompt compact; check them
+  with: python3 --version, node --version, rustc --version.
 EOF
             ;;
         shell)

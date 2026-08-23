@@ -9,7 +9,7 @@ palette = "black_ice"
 # language or container context, so the bar stays seamless whether or not those
 # conditional modules are present. Every conditional module renders nothing when
 # empty, so there are no placeholder capsules. The prompt character is on line 2.
-format = "[](fg:surface)$os$env_var[](fg:surface bg:secondary)$directory$git_branch$git_status$package$c$rust$golang$nodejs$bun$php$java$kotlin$haskell$python$docker_context$conda[](fg:secondary)$cmd_duration$line_break$status$character"
+format = "[](fg:surface)$os$env_var[](fg:surface bg:secondary)$directory$git_branch$git_status$package$docker_context$conda[](fg:secondary)$cmd_duration$line_break$status$character"
 
 [os]
 disabled = false
@@ -82,48 +82,7 @@ deleted = "[✘${count}](bold fg:error bg:secondary)"
 version_format = "v${raw}"
 display_private = false
 style = "bg:secondary fg:text"
-format = "[ pkg $version ]($style)"
-
-[c]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[rust]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[golang]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[nodejs]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[bun]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[php]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[java]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[kotlin]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[haskell]
-style = "bg:secondary fg:cyan"
-format = "[ $symbol( $version) ]($style)"
-
-[python]
-style = "bg:secondary fg:cyan"
-version_format = "${raw}"
-format = '[ py$version(#$virtualenv) ]($style)'
+format = "[ $version ]($style)"
 
 [docker_context]
 style = "bg:secondary fg:teal"

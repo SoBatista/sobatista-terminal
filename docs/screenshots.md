@@ -11,10 +11,16 @@ sanitization would damage the evidence, recapture it with safe content.
 
 ## Shared capture settings
 
-- Configuration: install the shipped configs first so the real Black Ice
-  background (`#070B0D`) and connected prompt are active: `bash install.sh
-  --configs-only`, then open a fresh Terminator window.
-- Profile: Terminator `default` with SoBatista Black Ice.
+- Configuration: install the shipped configs first so the Black Ice palette and
+  connected prompt are active: `bash install.sh --configs-only`.
+- Profile: capture on the solid **`BlackIce-Solid`** profile, not the subtly
+  transparent `default` — a transparent background would leak whatever is behind
+  the window. Launch an isolated process on the solid profile:
+
+  ```bash
+  terminator --no-dbus --profile=BlackIce-Solid
+  ```
+
 - Font: JetBrainsMono Nerd Font Mono 11.
 - Window: 1600 × 900 pixels where possible; use 1920 × 1080 only if 1600 × 900
   makes the three-pane layout unreadable.
