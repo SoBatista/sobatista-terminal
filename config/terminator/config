@@ -1,0 +1,89 @@
+[global_config]
+  borderless = False
+  extra_styling = True
+  handle_size = 2
+  homogeneous_tabbar = False
+  inactive_color_offset = 0.78
+  scroll_tabbar = True
+  suppress_multiple_term_dialog = True
+  tab_position = top
+  title_font = JetBrainsMono Nerd Font Mono 9
+  title_use_system_font = False
+  window_state = maximise
+[keybindings]
+[profiles]
+  [[default]]
+    allow_bold = True
+    audible_bell = False
+    background_color = "#070B0D"
+    background_darkness = 1.0
+    background_type = solid
+    bold_is_bright = True
+    copy_on_selection = False
+    cursor_bg_color = "#00E68A"
+    cursor_color = "#00E68A"
+    cursor_fg_color = "#070B0D"
+    cursor_shape = block
+    font = JetBrainsMono Nerd Font Mono 11
+    foreground_color = "#D6E7E9"
+    icon_bell = False
+    mouse_autohide = True
+    palette = "#111820:#FF4D5A:#00E68A:#F5C451:#22C7A9:#64748B:#5EEBFF:#D6E7E9:#18222C:#FF4D5A:#00E68A:#F5C451:#22C7A9:#64748B:#5EEBFF:#D6E7E9"
+    rewrap_on_resize = True
+    scroll_on_keystroke = True
+    scroll_on_output = False
+    scrollbar_position = hidden
+    scrollback_infinite = True
+    show_titlebar = False
+    use_system_font = False
+    use_theme_colors = False
+[layouts]
+  [[default]]
+    [[[window0]]]
+      type = Window
+      parent = ""
+      order = 0
+      maximised = True
+      fullscreen = False
+      title = SoBatista Terminal
+    [[[terminal0]]]
+      type = Terminal
+      parent = window0
+      order = 0
+      profile = default
+  [[AI-Workbench]]
+    [[[window0]]]
+      type = Window
+      parent = ""
+      order = 0
+      maximised = True
+      fullscreen = False
+      title = SoBatista AI Workbench
+    [[[main_split]]]
+      type = HPaned
+      parent = window0
+      order = 0
+      position = 950
+      ratio = 0.70
+    [[[terminal_main]]]
+      type = Terminal
+      parent = main_split
+      order = 0
+      profile = default
+    [[[right_split]]]
+      type = VPaned
+      parent = main_split
+      order = 1
+      position = 450
+      ratio = 0.50
+    [[[terminal_ai]]]
+      type = Terminal
+      parent = right_split
+      order = 0
+      profile = default
+    [[[terminal_logs]]]
+      type = Terminal
+      parent = right_split
+      order = 1
+      profile = default
+[plugins]

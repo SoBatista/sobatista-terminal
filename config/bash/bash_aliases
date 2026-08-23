@@ -1,0 +1,929 @@
+# shellcheck shell=bash
+# SoBatista Terminal — aliases, functions, local AI, Codex, and help
+
+# Navigation and files ---------------------------------------------------
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias -- -='cd -'
+
+alias ll='ls -alFh --group-directories-first'
+alias lt='ls -alFht --group-directories-first'
+alias lsize='ls -alFhS --group-directories-first'
+alias pathlines='printf "%s\n" "$PATH" | tr ":" "\n"'
+alias dirsize='du -xhd1 . 2>/dev/null | sort -h'
+alias diskfree='df -hT'
+alias meminfo='free -h'
+
+if command -v eza >/dev/null 2>&1; then
+    alias ll='eza --all --long --header --icons=auto --git --group-directories-first'
+    alias lt='eza --all --long --header --icons=auto --git --group-directories-first --sort=modified --reverse'
+    alias lsize='eza --all --long --header --icons=auto --git --group-directories-first --sort=size --reverse'
+fi
+
+mkcd() {
+    [[ $# -eq 1 ]] || {
+        printf 'Usage: mkcd DIRECTORY\n' >&2
+        return 2
+    }
+    mkdir -p -- "$1" && cd -- "$1" || return
+}
+
+croot() {
+    local root
+    root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+        printf 'Not inside a Git repository.\n' >&2
+        return 1
+    }
+    cd -- "$root" || return
+}
+
+backup() {
+    [[ $# -eq 1 ]] || {
+        printf 'Usage: backup FILE_OR_DIRECTORY\n' >&2
+        return 2
+    }
+    [[ -e $1 ]] || {
+        printf 'Not found: %s\n' "$1" >&2
+        return 1
+    }
+    local destination
+    destination="$1.bak.$(date +%Y%m%d-%H%M%S)"
+    cp -a -- "$1" "$destination" && printf 'Backup: %s\n' "$destination"
+}
+
+# Git --------------------------------------------------------------------
+alias g='git'
+alias gst='git status --short --branch'
+alias ga='git add'
+alias gap='git add --patch'
+alias gaa='git add --all'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gca='git commit --amend'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gl='git log --graph --decorate --oneline --all'
+alias gb='git branch'
+alias gba='git branch --all'
+alias gsw='git switch'
+alias gsc='git switch -c'
+alias gr='git restore'
+alias grs='git restore --staged'
+alias gf='git fetch --all --prune'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gup='git pull --ff-only'
+alias gw='git worktree'
+alias gwl='git worktree list'
+alias gwa='git worktree add'
+
+# Development ------------------------------------------------------------
+alias py='python3'
+alias json='jq .'
+alias watch1='watch -n 1 -d'
+
+venv() {
+    [[ -d .venv ]] || python3 -m venv .venv || return
+    # shellcheck disable=SC1091
+    source .venv/bin/activate
+}
+
+serve() {
+    python3 -m http.server "${1:-8000}" --bind 127.0.0.1
+}
+
+serve_lan() {
+    printf 'Serving the current directory on every network interface. Press Ctrl-C to stop.\n' >&2
+    python3 -m http.server "${1:-8000}" --bind 0.0.0.0
+}
+
+urlencode() {
+    jq -rn --arg value "$*" '$value | @uri'
+}
+
+# Docker -----------------------------------------------------------------
+alias d='docker'
+alias dc='docker compose'
+alias dps='docker ps'
+alias dcu='docker compose up'
+alias dcud='docker compose up -d'
+alias dcd='docker compose down'
+alias dcl='docker compose logs --follow --tail=200'
+alias dex='docker exec -it'
+
+# Linux administration ---------------------------------------------------
+alias ports='ss -tulpn'
+alias routes='ip route'
+alias interfaces='ip -brief address'
+alias failed='systemctl --failed'
+alias services='systemctl --type=service --state=running'
+alias jboot='journalctl -b -p warning'
+alias jfollow='journalctl --follow'
+alias topcpu='ps aux --sort=-%cpu | head -n 20'
+alias topmem='ps aux --sort=-%mem | head -n 20'
+
+pkg_search() {
+    (($#)) || {
+        printf 'Usage: pkg_search QUERY\n' >&2
+        return 2
+    }
+    if command -v apt-cache >/dev/null 2>&1; then
+        apt-cache search -- "$*"
+    elif command -v dnf5 >/dev/null 2>&1; then
+        dnf5 search "$*"
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf search "$*"
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Ss -- "$*"
+    else
+        printf 'Supported package manager not found.\n' >&2
+        return 127
+    fi
+}
+
+pkg_install() {
+    (($#)) || {
+        printf 'Usage: pkg_install PACKAGE...\n' >&2
+        return 2
+    }
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get install -- "$@"
+    elif command -v dnf5 >/dev/null 2>&1; then
+        sudo dnf5 install "$@"
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install "$@"
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --needed -- "$@"
+    else
+        printf 'Supported package manager not found.\n' >&2
+        return 127
+    fi
+}
+
+system_update() {
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get upgrade
+    elif command -v dnf5 >/dev/null 2>&1; then
+        sudo dnf5 upgrade --refresh
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf upgrade --refresh
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -Syu
+    else
+        printf 'Supported package manager not found (apt, DNF/DNF5, or pacman).\n' >&2
+        return 127
+    fi
+}
+
+apps_update() {
+    local status=0 found=0
+
+    if command -v flatpak >/dev/null 2>&1; then
+        found=1
+        flatpak update || status=1
+    fi
+    if command -v snap >/dev/null 2>&1; then
+        found=1
+        sudo snap refresh || status=1
+    fi
+    if command -v pipx >/dev/null 2>&1; then
+        found=1
+        pipx upgrade-all || status=1
+    fi
+    if command -v tldr >/dev/null 2>&1; then
+        found=1
+        tldr --update || status=1
+    fi
+
+    ((found)) || printf 'No supported optional app ecosystems are installed.\n'
+    return "$status"
+}
+
+restartcheck() {
+    if [[ -e /var/run/reboot-required ]]; then
+        printf 'REBOOT RECOMMENDED'
+        [[ -s /var/run/reboot-required ]] && printf ': %s' "$(</var/run/reboot-required)"
+        printf '\n'
+        [[ -r /var/run/reboot-required.pkgs ]] \
+            && sed 's/^/  - /' /var/run/reboot-required.pkgs
+        return 1
+    fi
+
+    if command -v dnf5 >/dev/null 2>&1 \
+        && dnf5 needs-restarting --help >/dev/null 2>&1; then
+        # --reboothint reports only core (kernel/systemd/glibc) reboots and is
+        # not present on every dnf5 build; fall back to plain needs-restarting.
+        if dnf5 needs-restarting --help 2>/dev/null | grep -q -- '--reboothint'; then
+            if dnf5 needs-restarting --reboothint; then
+                printf 'No Fedora reboot hint is active.\n'
+                return 0
+            fi
+            return 1
+        fi
+        if dnf5 needs-restarting; then
+            printf 'No dnf5 restart requirement is active.\n'
+            return 0
+        fi
+        return 1
+    fi
+
+    if command -v needs-restarting >/dev/null 2>&1; then
+        needs-restarting -r
+        return
+    fi
+
+    if command -v needrestart >/dev/null 2>&1; then
+        sudo needrestart -b
+        return
+    fi
+
+    printf 'No reboot marker detected. Reboot after kernel, systemd, libc, or GPU-driver updates.\n'
+}
+
+updateall() {
+    system_update || return
+    apps_update || printf 'One optional app ecosystem reported an update error.\n' >&2
+    printf '\nNot updated automatically: AppImages, arbitrary source checkouts, every language\n'
+    printf 'toolchain, browser extensions, or manually installed software. Use the explicit\n'
+    printf 'Codex, Ollama, Starship, and model update helpers when needed.\n'
+    restartcheck || true
+}
+
+_sb_update_from_installer() {
+    [[ $# -ge 2 ]] || return 2
+    local name=$1 url=$2
+    shift 2
+    local installer answer status
+
+    command -v curl >/dev/null 2>&1 || {
+        printf 'curl is required to download %s.\n' "$name" >&2
+        return 127
+    }
+    installer=$(mktemp) || return
+    if ! curl -fL --retry 3 --connect-timeout 15 -o "$installer" "$url"; then
+        rm -f -- "$installer"
+        return 1
+    fi
+
+    printf '%s installer downloaded from:\n  %s\n' "$name" "$url"
+    if command -v sha256sum >/dev/null 2>&1; then
+        printf 'SHA-256: %s\n' "$(sha256sum "$installer" | awk '{print $1}')"
+    fi
+    printf 'Review before execution in another terminal with: less %q\n' "$installer"
+    printf 'Run this downloaded installer now? [y/N] '
+    IFS= read -r answer
+    if [[ $answer != [yY] && $answer != [yY][eE][sS] ]]; then
+        printf 'Update cancelled; no installer was executed.\n'
+        rm -f -- "$installer"
+        return 0
+    fi
+
+    sh "$installer" "$@"
+    status=$?
+    rm -f -- "$installer"
+    return "$status"
+}
+
+updateollama() {
+    _sb_update_from_installer Ollama https://ollama.com/install.sh
+}
+
+updatecodex() {
+    _sb_update_from_installer Codex https://chatgpt.com/codex/install.sh
+}
+
+updatestarship() {
+    _sb_update_from_installer Starship https://starship.rs/install.sh \
+        -b "$HOME/.local/bin" -y
+}
+
+qmodels_update() {
+    _sb_require_ollama || return
+    local answer model status=0 found=0
+    printf 'This can download many gigabytes. Update every installed Ollama model? [y/N] '
+    IFS= read -r answer
+    [[ $answer == [yY] || $answer == [yY][eE][sS] ]] || return 0
+
+    while IFS= read -r model; do
+        [[ -n $model ]] || continue
+        found=1
+        command ollama pull "$model" || status=1
+    done < <(_sb_installed_models)
+    ((found)) || printf 'No installed Ollama models found.\n'
+    return "$status"
+}
+
+# Networking and authorized security testing ----------------------------
+# Use these commands only on systems you own or are explicitly authorized to test.
+alias headers='curl -sS -D - -o /dev/null --max-time 15'
+alias redirects='curl -sSIL --max-time 20'
+alias dns='dig +noall +answer'
+alias dns_short='dig +short'
+
+certinfo() {
+    [[ $# -ge 1 ]] || {
+        printf 'Usage: certinfo HOST [PORT]\n' >&2
+        return 2
+    }
+    local host=$1 port=${2:-443}
+    timeout 15 openssl s_client \
+        -connect "${host}:${port}" -servername "$host" </dev/null 2>/dev/null \
+        | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+}
+
+nmap_services() {
+    command nmap -sC -sV --open --reason "$@"
+}
+
+nmap_all_tcp() {
+    sudo nmap -sS -p- --open --reason "$@"
+}
+
+burp_on() {
+    export http_proxy='http://127.0.0.1:8080'
+    export https_proxy=$http_proxy
+    export HTTP_PROXY=$http_proxy
+    export HTTPS_PROXY=$https_proxy
+    printf 'Burp proxy enabled: %s\n' "$http_proxy"
+}
+
+burp_off() {
+    unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy
+    printf 'Proxy variables cleared.\n'
+}
+
+burp_status() {
+    if ! env | grep -Ei '^(http|https|all)_proxy='; then
+        printf 'Burp proxy variables are not enabled.\n'
+    fi
+}
+
+# Optional modern tools and clipboard -----------------------------------
+command -v fdfind >/dev/null 2>&1 && alias fd='fdfind'
+command -v batcat >/dev/null 2>&1 && alias bat='batcat'
+command -v fastfetch >/dev/null 2>&1 && alias sysinfo='fastfetch'
+
+alias rgall='rg --hidden --glob "!.git/**"'
+alias hgrep='history | rg'
+
+if command -v wl-copy >/dev/null 2>&1; then
+    alias cbcopy='wl-copy'
+    alias cbpaste='wl-paste'
+elif command -v xclip >/dev/null 2>&1; then
+    alias cbcopy='xclip -selection clipboard'
+    alias cbpaste='xclip -selection clipboard -o'
+fi
+
+alias workbench='terminator -l AI-Workbench'
+
+# Local Qwen through Ollama ----------------------------------------------
+export LOCAL_LLM_MODEL_STATE="${XDG_CONFIG_HOME:-$HOME/.config}/sobatista-terminal/model"
+export LOCAL_LLM_MODEL_DEFAULT='qwen2.5-coder:7b'
+
+_sb_valid_model_name() {
+    [[ ${1:-} =~ ^[A-Za-z0-9][A-Za-z0-9._:/-]*$ ]]
+}
+
+if [[ -r $LOCAL_LLM_MODEL_STATE ]]; then
+    IFS= read -r _sb_saved_model <"$LOCAL_LLM_MODEL_STATE"
+    if _sb_valid_model_name "$_sb_saved_model"; then
+        LOCAL_LLM_MODEL=$_sb_saved_model
+    else
+        printf 'Ignoring invalid model selection in %s.\n' "$LOCAL_LLM_MODEL_STATE" >&2
+    fi
+    unset _sb_saved_model
+fi
+export LOCAL_LLM_MODEL="${LOCAL_LLM_MODEL:-$LOCAL_LLM_MODEL_DEFAULT}"
+
+_sb_require_ollama() {
+    command -v ollama >/dev/null 2>&1 || {
+        printf 'Ollama is not installed or not in PATH. Run: llm_check\n' >&2
+        return 127
+    }
+}
+
+_sb_installed_models() {
+    local output
+    output=$(command ollama list 2>&1) || {
+        printf 'Unable to list Ollama models. Run: llm_check\n' >&2
+        return 1
+    }
+    awk 'NR > 1 && NF {print $1}' <<<"$output"
+}
+
+_sb_model_installed() {
+    _sb_installed_models | grep -Fxq -- "$1"
+}
+
+_sb_require_selected_model() {
+    _sb_model_installed "$LOCAL_LLM_MODEL" || {
+        printf 'Selected model is not installed or Ollama is unavailable: %s\n' \
+            "$LOCAL_LLM_MODEL" >&2
+        printf 'Run llm_check, then select an installed model with qm.\n' >&2
+        return 1
+    }
+}
+
+_sb_ollama_run() {
+    local model=$1
+    shift
+    if [[ -t 0 ]]; then
+        if (($#)); then
+            command ollama run "$model" "$*"
+        else
+            command ollama run "$model"
+        fi
+    elif (($#)); then
+        {
+            printf 'Instruction:\n%s\n\nInput:\n' "$*"
+            cat
+        } | command ollama run "$model"
+    else
+        command ollama run "$model"
+    fi
+}
+
+llm_check() {
+    if ! command -v ollama >/dev/null 2>&1; then
+        printf 'Ollama CLI: missing\n' >&2
+        printf 'Install it from https://ollama.com/download, then rerun this check.\n' >&2
+        return 127
+    fi
+
+    printf 'Ollama CLI: '
+    command ollama --version || return
+
+    if command -v systemctl >/dev/null 2>&1 \
+        && systemctl is-active --quiet ollama 2>/dev/null; then
+        printf 'Service: active\n'
+    elif pgrep -x ollama >/dev/null 2>&1; then
+        printf 'Process: running outside an active system service\n'
+    else
+        printf 'Service: not detected; start it with systemctl or ollama serve.\n'
+    fi
+
+    if command -v curl >/dev/null 2>&1 \
+        && curl -fsS --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+        printf 'API: responding on loopback\n'
+    else
+        printf 'API: not responding on loopback port 11434\n'
+    fi
+
+    printf '\nInstalled models:\n'
+    command ollama list || return
+    printf '\nLoaded models:\n'
+    command ollama ps || true
+    printf '\nSelected model: %s\n' "$LOCAL_LLM_MODEL"
+
+    if _sb_model_installed "$LOCAL_LLM_MODEL"; then
+        printf 'Selection: installed\n'
+    else
+        printf 'Selection: missing; install explicitly with: ollama pull %s\n' \
+            "$LOCAL_LLM_MODEL" >&2
+        return 1
+    fi
+}
+
+qmodels() {
+    _sb_require_ollama || return
+    command ollama list || return
+    printf '\nSelected model: %s\nState file: %s\n' \
+        "$LOCAL_LLM_MODEL" "$LOCAL_LLM_MODEL_STATE"
+}
+
+qmodel() {
+    _sb_require_ollama || return
+    local selected=${1:-}
+
+    if [[ -z $selected ]]; then
+        if command -v fzf >/dev/null 2>&1; then
+            selected=$(_sb_installed_models \
+                | fzf --prompt='Local model > ' --height=50% --border=rounded) || return
+            [[ -n $selected ]] || return 1
+        else
+            command ollama list
+            printf 'fzf is unavailable. Select explicitly with: qmodel MODEL\n' >&2
+            return 2
+        fi
+    fi
+
+    _sb_valid_model_name "$selected" || {
+        printf 'Invalid model name: %s\n' "$selected" >&2
+        return 2
+    }
+    _sb_model_installed "$selected" || {
+        printf 'Model is not installed: %s\nInstall it with: ollama pull %s\n' \
+            "$selected" "$selected" >&2
+        return 1
+    }
+
+    local state_dir state_tmp
+    state_dir=${LOCAL_LLM_MODEL_STATE%/*}
+    mkdir -p -- "$state_dir" || return
+    chmod 700 "$state_dir" || return
+    state_tmp=$(mktemp "$state_dir/.model.XXXXXXXX") || return
+    if ! chmod 600 "$state_tmp" || ! printf '%s\n' "$selected" >"$state_tmp" \
+        || ! mv -f -- "$state_tmp" "$LOCAL_LLM_MODEL_STATE"; then
+        rm -f -- "$state_tmp"
+        return 1
+    fi
+    LOCAL_LLM_MODEL=$selected
+    export LOCAL_LLM_MODEL
+    printf 'Local model selected: %s\n' "$LOCAL_LLM_MODEL"
+}
+
+qm() {
+    qmodel "$@"
+}
+
+q7() {
+    qmodel qwen2.5-coder:7b
+}
+
+q14() {
+    qmodel qwen2.5-coder:14b
+}
+
+q30() {
+    qmodel qwen3-coder:30b
+}
+
+qrun() {
+    [[ $# -ge 1 ]] || {
+        printf 'Usage: qrun MODEL [PROMPT]\n' >&2
+        return 2
+    }
+    _sb_require_ollama || return
+    local model=$1
+    shift
+    _sb_valid_model_name "$model" || {
+        printf 'Invalid model name: %s\n' "$model" >&2
+        return 2
+    }
+    _sb_model_installed "$model" || {
+        printf 'Model is not installed or Ollama is unavailable: %s\n' "$model" >&2
+        printf 'Install it explicitly with: ollama pull %s\n' "$model" >&2
+        return 1
+    }
+    _sb_ollama_run "$model" "$@"
+}
+
+q() {
+    _sb_require_ollama || return
+    _sb_require_selected_model || return
+    _sb_ollama_run "$LOCAL_LLM_MODEL" "$@"
+}
+
+qfile() {
+    [[ -f ${1:-} ]] || {
+        printf 'Usage: qfile FILE [QUESTION]\n' >&2
+        return 2
+    }
+    local file=$1
+    shift
+    {
+        printf 'File: %s\nInstruction: %s\n\n' \
+            "$file" "${*:-Explain this file, identify risks, and suggest improvements.}"
+        cat -- "$file"
+    } | q
+}
+
+qdiff() {
+    local diff
+    diff=$(git diff --no-ext-diff -- "$@") || return
+    [[ -n $diff ]] || {
+        printf 'No unstaged changes.\n'
+        return 0
+    }
+    printf '%s\n' "$diff" \
+        | q 'Review this diff. Prioritize correctness, security, regressions, and missing tests.'
+}
+
+qstaged() {
+    local diff
+    diff=$(git diff --cached --no-ext-diff -- "$@") || return
+    [[ -n $diff ]] || {
+        printf 'No staged changes.\n'
+        return 0
+    }
+    printf '%s\n' "$diff" \
+        | q 'Review this staged diff. Prioritize correctness, security, regressions, and missing tests.'
+}
+
+qcommit() {
+    local diff
+    diff=$(git diff --cached --no-ext-diff) || return
+    [[ -n $diff ]] || {
+        printf 'Nothing is staged.\n' >&2
+        return 1
+    }
+    printf '%s\n' "$diff" \
+        | q 'Write one concise Conventional Commit message. Return only the commit message.'
+}
+
+qlog() {
+    [[ -f ${1:-} ]] || {
+        printf 'Usage: qlog LOGFILE [LINES]\n' >&2
+        return 2
+    }
+    local lines=${2:-200}
+    [[ $lines =~ ^[1-9][0-9]*$ ]] || {
+        printf 'LINES must be a positive integer.\n' >&2
+        return 2
+    }
+    tail -n "$lines" -- "$1" \
+        | q 'Triage this log. Identify the likely root cause, evidence, and next three checks.'
+}
+
+qcmd() {
+    (($#)) || {
+        printf 'Usage: qcmd COMMAND [ARG ...]\n' >&2
+        return 2
+    }
+    local tmp status rendered
+    tmp=$(mktemp) || return
+    printf -v rendered '%q ' "$@"
+
+    "$@" 2>&1 | tee "$tmp"
+    status=${PIPESTATUS[0]}
+    tail -n 400 -- "$tmp" \
+        | q "Command: $rendered Exit status: $status. Explain the result and next concrete action."
+    rm -f -- "$tmp"
+    return "$status"
+}
+
+qps() {
+    _sb_require_ollama || return
+    command ollama ps
+}
+
+qstop() {
+    _sb_require_ollama || return
+    command ollama stop "${1:-$LOCAL_LLM_MODEL}"
+}
+
+qstopall() {
+    _sb_require_ollama || return
+    local model output found=0 status=0
+    output=$(command ollama ps) || {
+        printf 'Unable to list loaded Ollama models. Run: llm_check\n' >&2
+        return 1
+    }
+    while IFS= read -r model; do
+        [[ -n $model ]] || continue
+        found=1
+        command ollama stop "$model" || status=1
+    done < <(awk 'NR > 1 && NF {print $1}' <<<"$output")
+    ((found)) || printf 'No loaded Ollama models.\n'
+    return "$status"
+}
+
+# Cloud Codex and local Ollama-backed Codex ------------------------------
+_sb_require_codex() {
+    command -v codex >/dev/null 2>&1 || {
+        printf 'Codex is not installed or not in PATH. Run: cxd\n' >&2
+        return 127
+    }
+}
+
+cx() {
+    _sb_require_codex || return
+    command codex "$@"
+}
+
+cxask() {
+    _sb_require_codex || return
+    if [[ -t 0 ]]; then
+        (($#)) || {
+            printf 'Usage: cxask QUESTION\n' >&2
+            return 2
+        }
+        command codex exec --ephemeral "$*"
+    elif (($#)); then
+        command codex exec --ephemeral "$*"
+    else
+        command codex exec --ephemeral -
+    fi
+}
+
+cxr() {
+    _sb_require_codex || return
+    command codex resume --last "$@"
+}
+
+cxer() {
+    _sb_require_codex || return
+    command codex exec resume --last "$@"
+}
+
+cxl() {
+    _sb_require_codex || return
+    _sb_require_ollama || return
+    _sb_require_selected_model || return
+    command codex --oss --local-provider ollama --model "$LOCAL_LLM_MODEL" "$@"
+}
+
+cxlask() {
+    _sb_require_codex || return
+    _sb_require_ollama || return
+    _sb_require_selected_model || return
+    local -a args=(
+        codex exec --oss --local-provider ollama
+        --model "$LOCAL_LLM_MODEL" --ephemeral
+    )
+    if [[ -t 0 ]]; then
+        (($#)) || {
+            printf 'Usage: cxlask QUESTION\n' >&2
+            return 2
+        }
+        command "${args[@]}" "$*"
+    elif (($#)); then
+        command "${args[@]}" "$*"
+    else
+        command "${args[@]}" -
+    fi
+}
+
+cxlr() {
+    _sb_require_codex || return
+    _sb_require_ollama || return
+    _sb_require_selected_model || return
+    command codex --oss --local-provider ollama --model "$LOCAL_LLM_MODEL" \
+        resume --last "$@"
+}
+
+cxd() {
+    if command -v codex >/dev/null 2>&1; then
+        command codex doctor "$@"
+    else
+        printf 'Codex CLI: missing\nInstall from https://developers.openai.com/codex/cli/\n' >&2
+        return 127
+    fi
+}
+
+# Discoverable help ------------------------------------------------------
+cmdhelp() {
+    local name=${1:-} kind
+    if [[ -z $name ]] && command -v fzf >/dev/null 2>&1; then
+        name=$(compgen -c | sort -u \
+            | fzf --prompt='Command help > ' --height=60% --border=rounded) || return
+    fi
+    [[ -n $name ]] || {
+        printf 'Usage: cmdhelp COMMAND\n' >&2
+        return 2
+    }
+
+    printf 'Resolution:\n'
+    type -a "$name" 2>/dev/null || {
+        printf 'Unknown command: %s\n' "$name" >&2
+        return 127
+    }
+    printf '\n'
+    kind=$(type -t "$name")
+    case $kind in
+        alias) alias "$name" ;;
+        function) declare -f "$name" ;;
+        builtin | keyword) help "$name" ;;
+        file)
+            if command -v tldr >/dev/null 2>&1 && tldr "$name"; then
+                :
+            elif command -v man >/dev/null 2>&1 && man -w "$name" >/dev/null 2>&1; then
+                man "$name"
+            else
+                "$name" --help
+            fi
+            ;;
+    esac
+}
+
+termhelp() {
+    local topic=${1:-menu}
+    if [[ $topic == menu ]]; then
+        if command -v fzf >/dev/null 2>&1; then
+            topic=$(printf '%s\n' \
+                'keys - Bash and Terminator shortcuts' \
+                'ai - direct Ollama and cloud/local Codex' \
+                'git - safe Git shortcuts' \
+                'shell - navigation, files, development, and administration' \
+                'updates - explicit update boundaries' \
+                'security - authorized-testing helpers' \
+                'discovery - command documentation tools' \
+                | fzf --prompt='Help topic > ' --height=60% --border=rounded) || return
+            topic=${topic%% *}
+        else
+            printf 'Usage: termhelp {keys|ai|git|shell|updates|security|discovery}\n'
+            return 0
+        fi
+    fi
+
+    case $topic in
+        keys)
+            cat <<'EOF'
+BASH / READLINE
+  Ctrl-R             search history       Alt-.             previous last argument
+  Ctrl-A / Ctrl-E    start/end of line    Ctrl-W            delete previous word
+  Ctrl-U / Ctrl-K    delete left/right    Ctrl-X Ctrl-E     edit in $EDITOR
+  Up / Down          prefix history       cd -              previous directory
+
+TERMINATOR
+  Ctrl-Shift-O/E     split horizontal/vertical
+  Ctrl-Tab           cycle terminals      Ctrl-Shift-T/W    new tab/close pane
+  Ctrl-Shift-Arrows  resize pane          Ctrl-Shift-X      maximise pane
+  Ctrl-PgUp/PgDn     switch tabs          Ctrl-Shift-F      search scrollback
+EOF
+            ;;
+        ai)
+            printf 'SELECTED LOCAL MODEL: %s\n' "$LOCAL_LLM_MODEL"
+            cat <<'EOF'
+DIRECT OLLAMA (local)
+  llm_check              diagnose CLI, service, API, models, and selection
+  qm / qmodel [MODEL]    fuzzy-select or explicitly persist a model
+  q7 / q14 / q30         persist one of the supported defaults
+  qmodels / qps          list installed models / loaded models
+  q [PROMPT]             chat with the selected model; accepts pipes
+  qrun MODEL [PROMPT]    one-off run without changing the selection
+  qfile / qdiff          analyze a file / unstaged Git diff
+  qstaged / qcommit      review staged changes / propose a commit message
+  qlog / qcmd            analyze logs / run and explain a command
+  qstop / qstopall       unload the selected model / every loaded model
+
+CLOUD CODEX
+  cx / cxask             interactive / non-interactive cloud Codex
+  cxr / cxer             resume interactive / non-interactive cloud work
+  cxd                    Codex diagnostics
+
+LOCAL CODEX HARNESS + OLLAMA
+  cxl / cxlask           interactive / non-interactive local Codex
+  cxlr                   resume with the selected local Ollama model
+EOF
+            ;;
+        git)
+            cat <<'EOF'
+  gst status       ga/gap/gaa add       gc/gcm/gca commit       gd/gds diff
+  gl log graph     gb/gba branch        gsw/gsc switch          gr/grs restore
+  gf fetch/prune   gp push              gpf force-with-lease    gup ff-only pull
+  gw worktree      gwl list worktrees   gwa add worktree
+EOF
+            ;;
+        shell)
+            cat <<'EOF'
+  .. ... .... -        navigation       mkcd / croot / backup   file helpers
+  ll / lt / lsize      listings         diskfree / meminfo      system capacity
+  pathlines / dirsize  PATH and sizes   venv / serve            local development
+  serve_lan            explicit LAN     dc* / d*                Docker Compose
+  ports / routes       networking       services / failed       systemd state
+  jboot / jfollow      journal          topcpu / topmem         process views
+  pkg_search/install   packages         workbench               three-pane layout
+EOF
+            ;;
+        updates)
+            cat <<'EOF'
+  system_update      apt, DNF/DNF5, or pacman packages
+  apps_update        Flatpak, Snap, pipx, and tldr when installed
+  updateall          both groups followed by restartcheck
+  updatecodex        inspect and run the official Codex installer
+  updateollama       inspect and run the official Ollama installer
+  updatestarship     inspect and run the official Starship installer
+  qmodels_update     confirm, then update every installed Ollama model
+  restartcheck       report distribution reboot hints
+
+Not covered: AppImages, arbitrary source checkouts, every language toolchain,
+browser extensions, or all manually installed software. Linux filesystem cache
+is normally beneficial and automatically reclaimed; this project never drops it.
+EOF
+            ;;
+        security)
+            cat <<'EOF'
+AUTHORIZED TARGETS ONLY
+  headers URL           response headers
+  redirects URL         redirect chain
+  dns / dns_short NAME  DNS answers
+  certinfo HOST [PORT]  TLS certificate details
+  nmap_services TARGET  default scripts and service versions
+  nmap_all_tcp TARGET   all TCP ports with an explicit privileged SYN scan
+  burp_on/off/status    Burp loopback proxy environment control
+EOF
+            ;;
+        discovery | discover)
+            cat <<'EOF'
+  cmdhelp [COMMAND]  fuzzy-select or inspect a command, alias, function, or builtin
+  type -a COMMAND    show exactly what Bash resolves
+  help BUILTIN       Bash builtin documentation
+  tldr COMMAND       practical examples
+  man COMMAND        full manual
+  apropos KEYWORD    search manual descriptions
+  alias              list aliases
+  declare -F         list functions
+EOF
+            ;;
+        *)
+            printf 'Unknown topic: %s\nUsage: termhelp {keys|ai|git|shell|updates|security|discovery}\n' \
+                "$topic" >&2
+            return 2
+            ;;
+    esac
+}
+
+alias th='termhelp'
+alias ch='cmdhelp'

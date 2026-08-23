@@ -1,0 +1,12 @@
+# Optional Codex CLI profile for local Ollama-backed work.
+#
+# Copy this file to "$CODEX_HOME/local-qwen.config.toml" (normally
+# ~/.codex/local-qwen.config.toml) only after reviewing it. The `cxl` helpers do
+# not require the file; they pass the selected model explicitly so `qm` controls
+# both direct Ollama and local Codex.
+
+model = "qwen2.5-coder:7b"
+oss_provider = "ollama"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "disabled"
