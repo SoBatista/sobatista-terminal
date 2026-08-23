@@ -22,9 +22,24 @@ for document in README.md docs/commands.md; do
             | awk '{print $1}' \
             | sort -u
     )
+    # Membership is resolved with an associative array, not
+    # `printf ... | grep -Fxq`. In that pipeline `grep -q` exits at its first
+    # match and closes the pipe; when it wins the race against the forked
+    # printf's flush, printf dies of SIGPIPE and `set -o pipefail` reports the
+    # pipeline as failed. A name that *is* documented then gets flagged as
+    # missing, which showed up as an intermittent CI failure on early-sorting
+    # names such as `burp_off`.
+    unset documented_index
+    declare -A documented_index=()
+    for token in "${documented[@]}"; do
+        if [[ -n $token ]]; then
+            documented_index["$token"]=1
+        fi
+    done
+
     for name in "${names[@]}"; do
         [[ $name == _sb_* ]] && continue
-        if ! printf '%s\n' "${documented[@]}" | grep -Fxq -- "$name"; then
+        if [[ -z ${documented_index["$name"]+present} ]]; then
             printf 'Undocumented public shell command in %s: %s\n' \
                 "$document" "$name" >&2
             status=1

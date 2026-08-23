@@ -9,7 +9,7 @@ authorized security work.
 
 [![CI](https://github.com/SoBatista/sobatista-terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/SoBatista/sobatista-terminal/actions/workflows/ci.yml)
 [![Security](https://github.com/SoBatista/sobatista-terminal/actions/workflows/security.yml/badge.svg)](https://github.com/SoBatista/sobatista-terminal/actions/workflows/security.yml)
-[![Release](https://img.shields.io/badge/version-0.1.0-00E68A)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/version-0.1.1-00E68A)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5EEBFF.svg)](LICENSE)
 
 <br>
@@ -18,7 +18,7 @@ authorized security work.
 
 </div>
 
-Version: `0.1.0`
+Version: `0.1.1`
 
 > [!NOTE]
 > Screenshots are real, sanitized captures from the configured Terminator
@@ -61,22 +61,64 @@ with the exact release and package-manager version.
 
 ## Safe quick start
 
-The primary flow downloads the Git repository, lets you inspect it, validates it,
-and only then runs the installer. It does not pipe network content into a shell.
+Both flows download the repository, let you inspect it, validate it, and only
+then run the installer. Neither pipes network content into a shell, and there is
+no `curl | bash` installer.
+
+Choose your source deliberately:
+
+| You want | Install from | Moves under you? |
+| --- | --- | --- |
+| A predictable daily environment | A **tagged release** (`vX.Y.Z`) | No — a tag is fixed |
+| To change the project itself | A **branch** of your checkout | Yes — every fetch/switch |
+
+`main` is development state, not a supported release; security fixes target the
+latest tagged `0.x` release (see [the security policy](SECURITY.md)). Cloning and
+installing without choosing a tag leaves you on a moving development branch.
+
+### Stable install (recommended)
 
 ```bash
 git clone https://github.com/SoBatista/sobatista-terminal.git
 cd sobatista-terminal
-git status --short --branch
+git fetch --tags
+git tag --list 'v*' --sort=-version:refname   # newest release first
+git switch --detach vX.Y.Z                    # the release you reviewed
+git describe --tags --exact-match             # confirm the exact tag
 less install.sh
 bash install.sh --self-test
 bash install.sh --dry-run
 bash install.sh
 ```
 
+Release notes and source archives are on the
+[releases page](https://github.com/SoBatista/sobatista-terminal/releases/latest).
+An extracted archive installs the same way; inspect it before running anything.
+Update by fetching tags and switching to the next release you have read — not by
+following a branch.
+
 Use `--configs-only` to avoid package or software installation. Use `--yes` only
 after reviewing the plan and external installer sources. The 14B and 30B models
 are never downloaded unless `--all-models` is explicitly passed.
+
+### Contributor / development install
+
+Contributors work from a branch and may link the checkout into their shell:
+
+```bash
+git clone https://github.com/SoBatista/sobatista-terminal.git
+cd sobatista-terminal
+git switch -c fix/short-description
+bash install.sh --dev-link --configs-only     # links ~/.bashrc, ~/.bash_aliases, ~/.inputrc
+```
+
+`--dev-link` makes the checkout the live source of truth for the Bash and
+Readline files, so whatever those files contain on the currently checked-out
+branch is what the **next** shell you open runs. Switching to a branch you have
+not read — including a pull request from someone else — changes newly opened
+shells. Use it only with code you trust, and keep the copy-based
+`bash install.sh` for daily use. Details in
+[developer mode](#developer-mode-live-linked-configuration).
 
 See [installation](docs/installation.md) for every option, package list, external
 installer boundary, and a fully manual configuration install.
@@ -231,8 +273,8 @@ cmdhelp                     # fuzzy command picker (alias: ch)
 cmdhelp gup                 # alias resolution and definition
 ```
 
-Topics: `keys`, `ai`, `git`, `shell`, `updates`, `security`, `privacy`, and
-`discovery`.
+Topics: `keys`, `ai`, `git`, `shell`, `updates`, `security`, `privacy`, `dev`,
+and `discovery`.
 The exhaustive public command reference is in [commands](docs/commands.md).
 
 ![SoBatista Terminal termhelp ai output in the Black Ice theme: the selected local model, direct Ollama commands, and separately grouped cloud and local Codex commands.](docs/assets/screenshots/termhelp-ai.png)
@@ -330,8 +372,13 @@ termdev_status                               # show copy / link / broken / missi
 termreload                                   # validate, reload Readline, exec a fresh shell
 ```
 
-Editing `config/bash/*` then affects every newly opened shell. The copy-based
-`bash install.sh` remains the recommended default for public users. See
+Editing `config/bash/*` then affects every newly opened shell; already-running
+shells keep their loaded copy until you run `termreload` or open a new terminal.
+Because the checkout is the live source of truth, the branch you have checked out
+decides what the next shell runs — switch branches only after reading them. The
+copy-based `bash install.sh` remains the recommended default for public users,
+and `bash uninstall.sh` removes a managed symlink only while it still points at
+this repository. See
 [customization](docs/customization.md#developer-mode-live-linked-shell-configuration).
 
 ## Customization and screenshots
