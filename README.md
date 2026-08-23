@@ -197,6 +197,8 @@ cmdhelp gup                 # alias resolution and definition
 Topics: `keys`, `ai`, `git`, `shell`, `updates`, `security`, and `discovery`.
 The exhaustive public command reference is in [commands](docs/commands.md).
 
+![SoBatista Terminal termhelp ai output in the Black Ice theme: the selected local model, direct Ollama commands, and separately grouped cloud and local Codex commands.](docs/assets/screenshots/termhelp-ai.png)
+
 ### Complete public command index
 
 Every installed public alias and function is listed here so the README remains

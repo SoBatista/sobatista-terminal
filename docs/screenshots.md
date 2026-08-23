@@ -82,10 +82,15 @@ Visible: the entire local Ollama, cloud Codex, and local Codex help output. Hide
 the prompt line if it exposes an unsuitable host name; recapture with a safe host
 rather than painting over it.
 
-Desired filename: `docs/assets/screenshots/termhelp-ai.png`.
+Filename: `docs/assets/screenshots/termhelp-ai.png`.
 
-Suggested alt text: “Built-in AI help listing direct Ollama and separate cloud
-and local Codex commands.”
+Alt text: “Built-in AI help listing direct Ollama and separate cloud and local
+Codex commands.”
+
+> [!NOTE]
+> Captured and in the repository. Reviewed for private data, captured in
+> screenshot mode (safe identity), and cropped to the content. Wired into the
+> README "Discover shortcuts" section.
 
 ## 3. Model selection menu
 
