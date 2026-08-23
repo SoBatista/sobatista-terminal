@@ -6,11 +6,16 @@ timeout = 20
 accept = [200, 206, 429]
 exclude = [
   "https://github.com/SoBatista/sobatista-terminal/actions/.*",
-  "https://github.com/SoBatista/sobatista-terminal/releases/tag/.*",
+  # Release-tag lifecycle, not a one-off exception. Each CHANGELOG version
+  # section links to its own GitHub Release page, and that page only exists
+  # after the version's pull request is merged and the release workflow tags and
+  # publishes it. The link is therefore 404 for exactly the duration of the pull
+  # request that introduces it, and permanently valid afterwards. Excluding this
+  # repository's SemVer release-tag pages covers every release with one stable,
+  # documented rule instead of a new stale exception per version. The
+  # "Unreleased" compare link is deliberately NOT excluded: it always points at
+  # the previous, already-published tag, so it must keep being checked. See the
+  # changelog link policy in docs/maintenance.md.
+  '^https://github\.com/SoBatista/sobatista-terminal/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+$',
   "https://img.shields.io/.*",
-  # Pre-release exception: the CHANGELOG "Unreleased" link compares against the
-  # not-yet-created v0.1.0 tag, so GitHub returns 404 until the first release.
-  # This is anchored to the exact planned first-release compare URL; remove or
-  # reconsider it once v0.1.0 has been tagged.
-  '^https://github\.com/SoBatista/sobatista-terminal/compare/v0\.1\.0\.\.\.HEAD$',
 ]
