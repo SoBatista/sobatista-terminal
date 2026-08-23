@@ -127,16 +127,34 @@ restore_one() {
 }
 
 remove_or_preserve() {
-    local relative=$1 installed_hash=$2
+    local relative=$1 kind=$2 value=$3
     local target=$HOME/$relative
     [[ -e $target || -L $target ]] || return 0
+
+    if [[ $kind == link ]]; then
+        # Remove only a symlink this project still owns. rm on a symlink removes
+        # the link itself and never follows it to the repository target. A link
+        # the user replaced or retargeted is left alone.
+        if [[ -L $target && $(readlink -- "$target") == "$value" ]]; then
+            if ((DRY_RUN)); then
+                printf '[dry-run] remove project symlink: %s\n' "$target"
+            else
+                rm -f -- "$target"
+                printf 'Removed link: %s\n' "$target"
+            fi
+        else
+            printf 'Preserved retargeted or replaced link: %s\n' "$target"
+        fi
+        return 0
+    fi
+
     if [[ -L $target || ! -f $target ]]; then
         printf 'Preserved modified file type: %s\n' "$target"
         return 0
     fi
     local current_hash
     current_hash=$(sb_sha256 "$target")
-    if [[ $current_hash != "$installed_hash" ]]; then
+    if [[ $current_hash != "$value" ]]; then
         printf 'Preserved modified file: %s\n' "$target"
         return 0
     fi
@@ -181,9 +199,14 @@ main() {
         exit 0
     }
 
-    local relative installed_hash
-    while IFS=$'\t' read -r relative installed_hash; do
-        [[ -n $relative && -n $installed_hash ]] || continue
+    local relative kind value
+    while IFS=$'\t' read -r relative kind value; do
+        [[ -n $relative && -n $kind ]] || continue
+        # Backward compatibility: older manifests recorded "relative<TAB>hash".
+        if [[ -z $value ]]; then
+            value=$kind
+            kind=copy
+        fi
         sb_target_allowed "$relative" || {
             sb_warn "Ignoring unexpected manifest target: $relative"
             continue
@@ -191,7 +214,7 @@ main() {
         if [[ -n $backup ]] && restore_one "$relative" "$backup"; then
             :
         else
-            remove_or_preserve "$relative" "$installed_hash"
+            remove_or_preserve "$relative" "$kind" "$value"
         fi
     done <"$INSTALL_MANIFEST"
 

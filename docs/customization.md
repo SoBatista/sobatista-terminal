@@ -173,6 +173,49 @@ That hook is not enabled by default because private files and their behavior
 cannot be tested by the project. Never contribute private hostnames, credentials,
 target addresses, client names, or machine-specific paths.
 
+## Developer mode: live-linked shell configuration
+
+The public installer copies configuration, so a checkout can move or change
+without affecting installed shells. Contributors can instead make the repository
+the live source of truth for the Bash and Readline files with `--dev-link`,
+which backs up the current files and symlinks `~/.bashrc`, `~/.bash_aliases`, and
+`~/.inputrc` to their canonical files (`config/bash/bashrc`,
+`config/bash/bash_aliases`, `config/bash/inputrc`). The Starship and Terminator
+configs are still copied. Typical daily workflow:
+
+```bash
+# One-time developer setup, run from your repository checkout
+bash install.sh --dev-link --configs-only
+
+# See whether each managed file is a copy, a link (and target), or missing
+termdev_status
+
+# Edit the canonical repository configuration
+$EDITOR config/bash/bash_aliases
+
+# In an existing terminal: validate and reload
+termreload
+
+# New terminals load the change automatically
+
+# Open a solid terminal for screenshots or screen sharing
+privacy
+```
+
+Notes:
+
+- After `--dev-link`, editing `config/bash/{bashrc,bash_aliases,inputrc}` affects
+  every newly opened Bash shell. Already-running shells do not reload on their
+  own: open a new one or run `termreload`. Reload only Readline in place with
+  `bind -f ~/.inputrc`.
+- Moving or deleting the repository leaves broken links until it is restored or
+  reinstalled; `termdev_status` flags a broken link.
+- Because a checked-out branch can change what the next shell runs, use
+  `--dev-link` only with code you trust.
+- The command is idempotent and supports `--dry-run`. It never converts a normal
+  user to symlink mode implicitly; the copy-based `bash install.sh` remains the
+  recommended default.
+
 ## Model selection state
 
 Set `XDG_CONFIG_HOME` before Bash starts to relocate the model-selection state.

@@ -14,8 +14,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Production-ready Bash, Readline, Starship, and Terminator configuration.
 - Direct Ollama/Qwen workflows and separate cloud/local Codex helpers.
 - Idempotent, cross-distribution installation, backup, rollback, and removal.
-- Discoverable terminal help covering commands, keys, AI, Git, updates, and
-  authorized security testing.
+- Discoverable terminal help covering commands, keys, AI, Git, updates,
+  authorized security testing, the privacy terminal, and developer link mode.
+- Subtly transparent Black Ice default profile (0.90) with a solid
+  `BlackIce-Solid` profile and a `privacy` command for screen-sharing-safe
+  windows.
+- Developer `--dev-link` install mode that live-links the shell/Readline files
+  to the repository, with `termreload` and `termdev_status` helpers and
+  symlink-aware backup, uninstall, and restore.
 - Automated syntax, behavior, portability, documentation, security, and release
   validation.
 - Open-source governance, maintenance, contribution, and security policies.

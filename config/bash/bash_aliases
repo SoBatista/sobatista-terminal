@@ -392,6 +392,42 @@ privacy() {
     disown 2>/dev/null || true
 }
 
+# Validate and reload the shell configuration in a fresh process. Re-sourcing
+# ~/.bashrc repeatedly can duplicate integrations, so a successful reload
+# re-execs Bash. Readline (~/.inputrc) is reloaded in place first.
+termreload() {
+    local file
+    for file in "$HOME/.bashrc" "$HOME/.bash_aliases"; do
+        [[ -r $file ]] || continue
+        if ! bash -n "$file"; then
+            printf 'Syntax error in %s; shell not reloaded.\n' "$file" >&2
+            return 1
+        fi
+    done
+    [[ -r $HOME/.inputrc ]] && bind -f "$HOME/.inputrc" 2>/dev/null
+    exec bash
+}
+
+# Report how each managed shell/Readline file is installed: a regular file, a
+# valid symlink (with target), a broken symlink, or missing.
+termdev_status() {
+    local file target
+    for file in "$HOME/.bashrc" "$HOME/.bash_aliases" "$HOME/.inputrc"; do
+        if [[ -L $file ]]; then
+            target=$(readlink -- "$file")
+            if [[ -e $file ]]; then
+                printf '%-14s symlink -> %s\n' "${file##*/}" "$target"
+            else
+                printf '%-14s broken symlink -> %s\n' "${file##*/}" "$target"
+            fi
+        elif [[ -f $file ]]; then
+            printf '%-14s regular file\n' "${file##*/}"
+        else
+            printf '%-14s missing\n' "${file##*/}"
+        fi
+    done
+}
+
 # Local Qwen through Ollama ----------------------------------------------
 export LOCAL_LLM_MODEL_STATE="${XDG_CONFIG_HOME:-$HOME/.config}/sobatista-terminal/model"
 export LOCAL_LLM_MODEL_DEFAULT='qwen2.5-coder:7b'
@@ -825,10 +861,11 @@ termhelp() {
                 'security - authorized-testing helpers' \
                 'discovery - command documentation tools' \
                 'privacy - solid terminal profile for screen sharing' \
+                'dev - developer live-link shell mode' \
                 | fzf --prompt='Help topic > ' --height=60% --border=rounded) || return
             topic=${topic%% *}
         else
-            printf 'Usage: termhelp {keys|ai|git|shell|updates|security|privacy|discovery}\n'
+            printf 'Usage: termhelp {keys|ai|git|shell|updates|security|privacy|dev|discovery}\n'
             return 0
         fi
     fi
@@ -961,8 +998,26 @@ their own background. Terminal transparency is a Terminator profile setting,
 separate from the shell's SOBATISTA_SCREENSHOT_MODE prompt identity.
 EOF
             ;;
+        dev)
+            cat <<'EOF'
+DEVELOPER SHELL LINKING
+  bash install.sh --dev-link --configs-only
+                     symlink ~/.bashrc, ~/.bash_aliases, and ~/.inputrc to this
+                     checkout's canonical files (the repo is the live source)
+  termdev_status     show whether each file is a copy, a link (and target),
+                     a broken link, or missing
+  termreload         validate ~/.bashrc and ~/.bash_aliases, reload ~/.inputrc,
+                     then exec a fresh shell (a syntax error aborts safely)
+
+After --dev-link, editing config/bash/* affects every newly opened shell.
+Running shells are unchanged: open a new one, or run termreload. Reload only
+Readline with: bind -f ~/.inputrc. Moving or deleting the repo leaves broken
+links until it is restored or reinstalled; the copy-based `bash install.sh`
+remains the recommended default for public users.
+EOF
+            ;;
         *)
-            printf 'Unknown topic: %s\nUsage: termhelp {keys|ai|git|shell|updates|security|privacy|discovery}\n' \
+            printf 'Unknown topic: %s\nUsage: termhelp {keys|ai|git|shell|updates|security|privacy|dev|discovery}\n' \
                 "$topic" >&2
             return 2
             ;;

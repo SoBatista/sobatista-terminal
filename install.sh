@@ -18,6 +18,7 @@ DRY_RUN=0
 SKIP_OLLAMA=0
 SKIP_CODEX=0
 SELF_TEST=0
+DEV_LINK=0
 DEFAULT_MODEL='qwen2.5-coder:7b'
 
 usage() {
@@ -35,6 +36,9 @@ Options:
   --skip-codex      Do not install Codex
   --all-models      Pull the supported 7B, 14B, and 30B models
   --self-test       Validate the repository and change nothing
+  --dev-link        Developer mode: symlink ~/.bashrc, ~/.bash_aliases, and
+                    ~/.inputrc to this checkout's canonical files (the repository
+                    becomes the live source of truth). Normal installs copy.
 
 The installer refuses root, backs up every changed target, and never uses
 `curl | sh`. External installers are downloaded to a temporary file, identified,
@@ -56,6 +60,7 @@ parse_args() {
             --skip-codex) SKIP_CODEX=1 ;;
             --all-models) ALL_MODELS=1 ;;
             --self-test) SELF_TEST=1 ;;
+            --dev-link) DEV_LINK=1 ;;
             *)
                 usage >&2
                 printf 'ERROR: Unknown option: %s\n' "$1" >&2
@@ -322,31 +327,48 @@ choose_backup_dir() {
     printf '%s' "$candidate"
 }
 
+# Is the installed target already exactly what this run would produce?
+_sb_config_is_current() {
+    local target=$1 link_src=$2 kind=$3
+    if ((DEV_LINK)) && [[ $kind == link ]]; then
+        [[ -L $target && $(readlink -- "$target") == "$link_src" ]]
+    else
+        [[ ! -L $target && -f $target ]] && cmp -s "$link_src" "$target"
+    fi
+}
+
 install_configs() {
     local backup_dir
     backup_dir=$(choose_backup_dir)
     printf '\nConfiguration backup/rollback location: %s\n' "$backup_dir"
+    ((DEV_LINK)) \
+        && printf 'Developer link mode: shell/Readline files link into %s\n' "$SCRIPT_DIR"
 
+    # source|relative|mode|kind  ("link" files become symlinks under --dev-link;
+    # "copy" files are always copied so rollback stays deterministic).
     local -a mappings=(
-        "config/bash/bashrc|.bashrc|600"
-        "config/bash/bash_aliases|.bash_aliases|600"
-        "config/bash/inputrc|.inputrc|600"
-        "config/starship/starship.toml|.config/starship.toml|600"
-        "config/terminator/config|.config/terminator/config|600"
+        "config/bash/bashrc|.bashrc|600|link"
+        "config/bash/bash_aliases|.bash_aliases|600|link"
+        "config/bash/inputrc|.inputrc|600|link"
+        "config/starship/starship.toml|.config/starship.toml|600|copy"
+        "config/terminator/config|.config/terminator/config|600|copy"
     )
 
+    local mapping source relative mode kind target link_src relative_dir
     if ((DRY_RUN)); then
-        local mapping source relative mode target
         for mapping in "${mappings[@]}"; do
-            IFS='|' read -r source relative mode <<<"$mapping"
+            IFS='|' read -r source relative mode kind <<<"$mapping"
             target="$HOME/$relative"
+            link_src="$SCRIPT_DIR/$source"
             if [[ -L $target || -e $target ]] \
-                && { [[ -L $target ]] || ! cmp -s "$SCRIPT_DIR/$source" "$target"; }; then
+                && ! _sb_config_is_current "$target" "$link_src" "$kind"; then
                 printf '[dry-run] back up %s to %s/files/%s\n' \
                     "$target" "$backup_dir" "$relative"
             fi
-            if [[ ! -L $target && -e $target ]] && cmp -s "$SCRIPT_DIR/$source" "$target"; then
+            if _sb_config_is_current "$target" "$link_src" "$kind"; then
                 printf '[dry-run] unchanged %s\n' "$target"
+            elif ((DEV_LINK)) && [[ $kind == link ]]; then
+                printf '[dry-run] link %s -> %s\n' "$target" "$link_src"
             else
                 printf '[dry-run] install %s -> %s (mode %s)\n' "$source" "$target" "$mode"
             fi
@@ -362,27 +384,36 @@ install_configs() {
     printf 'version=%s\ncreated=%s\n' "$(<"$SCRIPT_DIR/VERSION")" "$(date -u +%FT%TZ)" \
         >"$backup_dir/metadata"
 
-    local mapping source relative relative_dir mode target hash
     for mapping in "${mappings[@]}"; do
-        IFS='|' read -r source relative mode <<<"$mapping"
+        IFS='|' read -r source relative mode kind <<<"$mapping"
         target="$HOME/$relative"
+        link_src="$SCRIPT_DIR/$source"
         sb_validate_home_target "$target" || return
-        if [[ -L $target || -e $target ]] \
-            && { [[ -L $target ]] || ! cmp -s "$SCRIPT_DIR/$source" "$target"; }; then
-            relative_dir=$(dirname -- "$relative")
-            mkdir -p -- "$backup_dir/files/$relative_dir"
-            cp -a -- "$target" "$backup_dir/files/$relative"
-            printf '%s\n' "$relative" >>"$backup_dir/restorable-files"
-        fi
 
-        if [[ ! -L $target && -e $target ]] && cmp -s "$SCRIPT_DIR/$source" "$target"; then
+        if _sb_config_is_current "$target" "$link_src" "$kind"; then
             printf 'Unchanged: %s\n' "$target"
         else
-            sb_atomic_install "$SCRIPT_DIR/$source" "$target" "$mode"
-            printf 'Installed: %s\n' "$target"
+            if [[ -L $target || -e $target ]]; then
+                relative_dir=$(dirname -- "$relative")
+                mkdir -p -- "$backup_dir/files/$relative_dir"
+                cp -a -- "$target" "$backup_dir/files/$relative"
+                printf '%s\n' "$relative" >>"$backup_dir/restorable-files"
+                printf 'Backed up: %s\n' "$target"
+            fi
+            if ((DEV_LINK)) && [[ $kind == link ]]; then
+                sb_atomic_symlink "$link_src" "$target"
+                printf 'Linked: %s -> %s\n' "$target" "$link_src"
+            else
+                sb_atomic_install "$link_src" "$target" "$mode"
+                printf 'Installed: %s\n' "$target"
+            fi
         fi
-        hash=$(sb_sha256 "$target")
-        printf '%s\t%s\n' "$relative" "$hash" >>"$manifest_tmp"
+
+        if [[ -L $target ]]; then
+            printf '%s\tlink\t%s\n' "$relative" "$(readlink -- "$target")" >>"$manifest_tmp"
+        else
+            printf '%s\tcopy\t%s\n' "$relative" "$(sb_sha256 "$target")" >>"$manifest_tmp"
+        fi
     done
     mv -f -- "$manifest_tmp" "$INSTALL_MANIFEST"
     chmod 600 "$INSTALL_MANIFEST"
@@ -399,6 +430,10 @@ cleanup() {
 
 main() {
     parse_args "$@"
+    if ((DEV_LINK && SELF_TEST)); then
+        printf 'ERROR: --dev-link cannot be combined with --self-test (self-test changes nothing).\n' >&2
+        exit 2
+    fi
     ((EUID != 0)) || {
         printf 'ERROR: Refusing to run as root. Run as your normal desktop user.\n' >&2
         exit 1

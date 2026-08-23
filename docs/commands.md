@@ -178,6 +178,8 @@ Codex auth, MCP configuration, sessions, hooks, or rollout databases.
 | `hgrep` | Alias | Search shell history with ripgrep. |
 | `workbench` | Alias | Open Terminator's `AI-Workbench` layout. |
 | `privacy` | Function | Open a new solid `BlackIce-Solid` Terminator window (opaque, for screen sharing) in the current directory; leaves the current terminal untouched and fails clearly if Terminator is absent. |
+| `termreload` | Function | Validate `~/.bashrc` and `~/.bash_aliases`, reload `~/.inputrc`, then `exec bash`; a syntax error aborts without replacing the shell. |
+| `termdev_status` | Function | Report whether `~/.bashrc`, `~/.bash_aliases`, and `~/.inputrc` are a regular file, a valid symlink (with target), a broken symlink, or missing. |
 | `fd` | Conditional alias | Map to Debian/Ubuntu's `fdfind` name when present. |
 | `bat` | Conditional alias | Map to Debian/Ubuntu's `batcat` name when present. |
 | `sysinfo` | Conditional alias | Run `fastfetch` when present. |

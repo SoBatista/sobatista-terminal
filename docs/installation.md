@@ -129,6 +129,25 @@ install -Dm600 config/terminator/config ~/.config/terminator/config
 Manual installs do not create the project manifest; automatic uninstall cannot
 safely identify them. Restore them using the backup you created.
 
+## Developer live-link mode
+
+Contributors can run the installer in `--dev-link` mode so the repository stays
+the live source of truth for the Bash and Readline files:
+
+```bash
+bash install.sh --dev-link --configs-only
+```
+
+This backs up the existing files, then symlinks `~/.bashrc`, `~/.bash_aliases`,
+and `~/.inputrc` to their canonical files in the current checkout (resolved at
+runtime, never hardcoded); Starship and Terminator configs are still copied. It
+is idempotent, supports `--dry-run`, reports copy/link/unchanged/backed-up per
+file, and is rejected with `--self-test`. Use `termdev_status` to see each
+file's state and `termreload` to validate and reload after editing. Editing
+`config/bash/*` then affects every newly opened shell; already-running shells do
+not reload automatically. The copy-based install remains the public default. See
+the [customization guide](customization.md#developer-mode-live-linked-shell-configuration).
+
 ## Rollback and uninstall
 
 The installer prints a command containing the exact backup path. You can also
@@ -144,6 +163,11 @@ Only a backup under the project's XDG backup root with valid metadata is accepte
 Current files are preserved before restoration. Without `--restore`, files are
 removed only when their SHA-256 still matches the install manifest. Modified
 files remain in place. Backup directories remain after uninstall.
+
+In developer link mode, uninstall removes a managed symlink only while it still
+points at this repository, and never follows it to delete the repository target;
+a link you have retargeted or replaced is preserved. Restoring a backup recreates
+whatever was there before the install — a regular file or the original symlink.
 
 ## After installation
 

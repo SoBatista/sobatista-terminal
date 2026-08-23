@@ -263,7 +263,8 @@ expansions, safety notes, and conditional-dependency details.
   `qstop`, and `qstopall`.
 - Codex: `cx`, `cxask`, `cxr`, `cxer`, `cxd`, `cxl`, `cxlask`, and `cxlr`.
 - Help and optional tools: `termhelp`, `th`, `cmdhelp`, `ch`, `rgall`, `hgrep`,
-  `workbench`, `privacy`, `fd`, `bat`, `sysinfo`, `cbcopy`, and `cbpaste`.
+  `workbench`, `privacy`, `termreload`, `termdev_status`, `fd`, `bat`, `sysinfo`,
+  `cbcopy`, and `cbpaste`.
 
 > [!WARNING]
 > `nmap_*`, TLS, DNS, HTTP, and Burp helpers are for systems you own or are
@@ -298,7 +299,10 @@ bash uninstall.sh --restore TIMESTAMP
 ```
 
 Uninstall removes only files whose SHA-256 still matches the installation
-manifest. Modified files are preserved. Backups are never deleted by uninstall.
+manifest (and, in developer mode, symlinks that still point at this repository).
+Modified files, and links you have retargeted, are preserved; a symlink is
+removed without ever following it to its repository target. Backups are never
+deleted by uninstall.
 
 ## Manual installation
 
@@ -314,6 +318,21 @@ install -Dm600 config/terminator/config ~/.config/terminator/config
 
 Back up existing targets yourself first. The full manual procedure and package
 maps are in [installation](docs/installation.md).
+
+### Developer mode (live-linked configuration)
+
+Contributors can make the repository the live source of truth for the Bash and
+Readline files instead of copying them:
+
+```bash
+bash install.sh --dev-link --configs-only   # symlink ~/.bashrc, ~/.bash_aliases, ~/.inputrc
+termdev_status                               # show copy / link / broken / missing per file
+termreload                                   # validate, reload Readline, exec a fresh shell
+```
+
+Editing `config/bash/*` then affects every newly opened shell. The copy-based
+`bash install.sh` remains the recommended default for public users. See
+[customization](docs/customization.md#developer-mode-live-linked-shell-configuration).
 
 ## Customization and screenshots
 

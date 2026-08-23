@@ -142,7 +142,7 @@ fi
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init bash)"
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"
 
-complete -W 'keys ai git shell updates security privacy discovery' termhelp th 2>/dev/null || true
+complete -W 'keys ai git shell updates security privacy dev discovery' termhelp th 2>/dev/null || true
 
 # Prompt identity. The Starship prompt reads SOBATISTA_PROMPT_IDENTITY so that
 # SOBATISTA_SCREENSHOT_MODE=1 shows a deterministic safe identity in captures

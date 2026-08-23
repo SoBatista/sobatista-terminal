@@ -130,3 +130,12 @@ sb_atomic_install() {
     install -m "$mode" "$source" "$temporary"
     mv -Tf -- "$temporary" "$target"
 }
+
+sb_atomic_symlink() {
+    local link_target=$1 target=$2
+    local temporary="$target.sobatista-tmp.$$"
+    sb_validate_home_target "$target" || return
+    mkdir -p -- "$(dirname -- "$target")"
+    ln -s -- "$link_target" "$temporary"
+    mv -Tf -- "$temporary" "$target"
+}
