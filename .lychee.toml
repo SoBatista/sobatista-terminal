@@ -1,0 +1,10 @@
+cache = true
+max_cache_age = "1d"
+max_retries = 2
+timeout = 20
+accept = [200, 206, 429]
+exclude = [
+  "https://github.com/SoBatista/sobatista-terminal/actions/.*",
+  "https://github.com/SoBatista/sobatista-terminal/releases/tag/.*",
+  "https://img.shields.io/.*"
+]

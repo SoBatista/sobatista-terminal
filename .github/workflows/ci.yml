@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install shell test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bats shellcheck shfmt
+
+      - name: Run full repository self-test
+        run: scripts/self-test.sh
+
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2@0.17.2 "**/*.md"
+
+      - name: Validate GitHub Actions
+        run: |
+          docker run --rm \
+            --volume "$PWD:/repo:ro" \
+            --workdir /repo \
+            rhysd/actionlint:1.7.12 -color
+
+      - name: Check links
+        run: |
+          docker run --rm \
+            --volume "$PWD:/repo:ro" \
+            --workdir /repo \
+            lycheeverse/lychee:0.24.0 \
+            --config .lychee.toml --no-progress .
+
+  release-metadata:
+    name: release metadata
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out pull request head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch the pull request base ref
+        run: |
+          git fetch --no-tags origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: Validate one exact SemVer increment
+        env:
+          RELEASE_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: scripts/check-version.sh --pr "origin/${{ github.base_ref }}"
+
+  distro-smoke:
+    name: smoke (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 24.04
+            image: ubuntu:24.04
+          - name: Fedora 44
+            image: fedora:44
+          - name: Arch Linux
+            image: archlinux:base
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install configuration as an unprivileged temporary user
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          docker run --rm \
+            --user 1000:1000 \
+            --env HOME=/tmp/sobatista-home \
+            --volume "$PWD:/repo:ro" \
+            --workdir /tmp \
+            "$IMAGE" \
+            bash -c '
+              set -e
+              mkdir -p "$HOME"
+              bash /repo/install.sh --configs-only --yes
+              bash -n "$HOME/.bashrc" "$HOME/.bash_aliases"
+              TERM=dumb bash --noprofile --norc -ic \
+                "type termhelp >/dev/null; type q >/dev/null; alias gup"
+            '

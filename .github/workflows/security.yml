@@ -1,0 +1,36 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: secrets and sensitive data
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Run repository-specific sensitive-data checks
+        run: scripts/check-secrets.sh
+
+      - name: Scan Git history with Gitleaks
+        run: |
+          docker run --rm \
+            --volume "$PWD:/repo:ro" \
+            zricethezav/gitleaks:v8.24.3 \
+            git --repo-path=/repo --redact --no-banner

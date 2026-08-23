@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible SoBatista Terminal defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not include credentials, private paths, target data, client names, or
+        Codex/Ollama state. Security vulnerabilities must use private reporting.
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: Distribution family
+      options:
+        - Debian / Ubuntu / Linux Mint
+        - Fedora
+        - Arch Linux
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Exact distribution release
+      placeholder: Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SoBatista Terminal version or commit
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction
+      description: Use synthetic values and include exact commands.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets, private paths, hostnames, IPs, and client data.
+          required: true
+        - label: I ran `bash install.sh --self-test` or explained why I could not.
+          required: true
