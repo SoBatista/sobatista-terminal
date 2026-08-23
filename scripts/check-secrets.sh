@@ -4,6 +4,15 @@ set -Eeuo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 cd "$ROOT"
 
+# Fail honestly on a missing dependency instead of misreporting an empty repo:
+# without this preflight, a missing `rg` makes the file-discovery pipeline below
+# produce no files and the script would wrongly claim "No repository files found".
+if ! command -v rg >/dev/null 2>&1; then
+    printf 'ripgrep (rg) is required to run scripts/check-secrets.sh.\n' >&2
+    printf 'Install ripgrep (for example: apt-get install ripgrep) and re-run.\n' >&2
+    exit 127
+fi
+
 mapfile -t files < <(rg --files -0 -g '!scripts/check-secrets.sh' \
     | while IFS= read -r -d '' file; do printf '%s\n' "$file"; done)
 

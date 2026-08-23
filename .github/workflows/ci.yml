@@ -26,7 +26,31 @@ jobs:
       - name: Install shell test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes bats shellcheck shfmt
+          # ripgrep powers scripts/check-secrets.sh; python3-configobj is
+          # Terminator's own config parser used by tests/terminator.bats
+          # (Ubuntu 24.04 ships configobj 5.0.x).
+          sudo apt-get install --yes bats shellcheck shfmt ripgrep python3-configobj
+
+      - name: Install pinned Starship
+        env:
+          STARSHIP_VERSION: "1.26.0"
+          # Upstream release checksum (…/v1.26.0/*.tar.gz.sha256); verified below.
+          STARSHIP_SHA256: "321f0dd7af8340a5f2e6a8fec6538a04f617486f9ec70d878f91c09cd8deef22"
+        run: |
+          url="https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}/starship-x86_64-unknown-linux-gnu.tar.gz"
+          curl -fsSL --retry 3 -o /tmp/starship.tar.gz "$url"
+          echo "${STARSHIP_SHA256}  /tmp/starship.tar.gz" | sha256sum --check --strict
+          sudo tar -xzf /tmp/starship.tar.gz -C /usr/local/bin starship
+          starship --version
+
+      - name: Verify the real-tool test toolchain is complete
+        run: |
+          for tool in bats shellcheck shfmt rg starship; do
+            command -v "$tool" >/dev/null \
+              || { echo "::error::required test tool missing: $tool"; exit 1; }
+          done
+          python3 -c 'import configobj' \
+            || { echo "::error::python3 configobj (Terminator parser) missing"; exit 1; }
 
       - name: Run full repository self-test
         run: scripts/self-test.sh
@@ -87,11 +111,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install configuration as an unprivileged temporary user
+      - name: Install configuration and validate the loaded shell
         env:
           IMAGE: ${{ matrix.image }}
         run: |
-          docker run --rm \
+          # --tty gives the interactive shell a controlling terminal so job
+          # control initialises cleanly (no "no job control" noise), and
+          # --rcfile loads the *installed* .bashrc (which sources .bash_aliases)
+          # instead of --norc, which previously disabled what the test checks.
+          docker run --rm --tty \
             --user 1000:1000 \
             --env HOME=/tmp/sobatista-home \
             --volume "$PWD:/repo:ro" \
@@ -102,6 +130,9 @@ jobs:
               mkdir -p "$HOME"
               bash /repo/install.sh --configs-only --yes
               bash -n "$HOME/.bashrc" "$HOME/.bash_aliases"
-              TERM=dumb bash --noprofile --norc -ic \
-                "type termhelp >/dev/null; type q >/dev/null; alias gup"
+              TERM=dumb bash --noprofile --rcfile "$HOME/.bashrc" -ic "
+                [[ \$(type -t termhelp) == function ]] &&
+                [[ \$(type -t q) == function ]] &&
+                alias gup >/dev/null
+              "
             '
