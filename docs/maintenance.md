@@ -192,6 +192,27 @@ changelog-wide exclusion, or disabled external link checking. If an exclusion
 genuinely cannot be avoided, keep it exact, keep it repository-specific, and
 write down why in `.lychee.toml`.
 
+## Transient link-check failures
+
+A timeout is not a broken link. Every external URL here depends on a third party
+answering a GitHub-hosted runner, and a healthy host can still refuse a burst:
+on 2026-08-23 two pushes to `main` two minutes apart checked the same 35 links,
+the first in 679 ms, and the second timed out on both `contributor-covenant.org`
+links through every attempt and failed the `quality` job.
+
+`.lychee.toml` therefore carries a transient-failure budget, sized so a short
+outage is outlived rather than declared acceptable. Spacing is the lever:
+`retry_wait_time` doubles per attempt, so raising it widens the window an outage
+has to outlast, while `timeout` bounds only a host that connects and then
+answers slowly — a connection that is never accepted is abandoned after ten
+seconds however large `timeout` is. Widen the spacing when CI times out on a URL
+that resolves from a workstation, and remove avoidable requests to the same host
+by linking the address it actually serves instead of one that redirects.
+`--accept-timeouts`, `--accept-all`, and a host exclusion stay off the table:
+they would keep the link in the file while no longer checking whether it works.
+If a host starts failing across many runs rather than one, the answer is a
+shared cache of recent results, not an ever-wider budget.
+
 ## Manual release verification
 
 Before approving a release-impact PR:

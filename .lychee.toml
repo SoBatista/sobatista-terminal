@@ -1,7 +1,25 @@
 # CI runs Lychee in an ephemeral container with the repository mounted
 # read-only, so a persistent cache cannot be written and is not useful.
 cache = false
-max_retries = 2
+
+# Transient-failure budget. The link-check failures seen in CI have been
+# timeouts, not broken links: on 2026-08-23 two pushes to `main` two minutes
+# apart checked the same 35 links, the first in 679 ms, and the second timed out
+# after 50 s on both contributor-covenant.org links (CODE_OF_CONDUCT.md) while
+# both URLs answered 200 from a workstation. The host stopped answering CI for a
+# window, and retry waits of 1 s and then 2 s put every attempt inside it.
+#
+# Spacing is the lever here, not per-request patience: a connection that is
+# never accepted is abandoned after 10 s however large `timeout` is (measured
+# against a blackholed address with this pinned lychee), so `timeout` bounds
+# only a host that connects and then answers slowly, and it stays at 20 s.
+# `retry_wait_time` doubles per attempt, so 10 s spreads four attempts over at
+# least 70 s of waiting — comfortably wider than the window that failed. A
+# genuinely dead link still fails the build; it now takes about two minutes to
+# say so. Excluding the host or accepting timeouts would keep the links in the
+# file while no longer checking them, which docs/maintenance.md rules out.
+max_retries = 3
+retry_wait_time = 10
 timeout = 20
 accept = [200, 206, 429]
 exclude = [

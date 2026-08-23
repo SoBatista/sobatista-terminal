@@ -7,6 +7,27 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-24
+
+### Fixed
+
+- Kept the link check honest when a third-party host stops answering. Two pushes
+  to `main` two minutes apart checked the same 35 links: the first finished in
+  679 ms, the second timed out after 50 s on both `contributor-covenant.org`
+  links and failed the `quality` job, while both URLs answer 200 from a
+  workstation. Retry waits of one and two seconds put every attempt inside the
+  same window of unavailability. The retry budget now spreads four attempts over
+  at least 70 seconds of waiting rather than three attempts over three seconds,
+  so a short outage expires between them. The per-request timeout is unchanged
+  on purpose: a connection that is never accepted is abandoned after ten seconds
+  whatever that timeout says. Excluding the URLs, accepting timeouts, or
+  dropping external link checking would each have kept the links in the file
+  while no longer checking them. A genuinely broken link still fails the build,
+  and now takes about two minutes to say so.
+- Pointed the Code of Conduct attribution at the Contributor Covenant address
+  the site actually serves, removing a `301` hop and halving the requests this
+  repository makes to the host that timed out.
+
 ## [0.1.1] - 2026-08-23
 
 ### Added
@@ -90,6 +111,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   validation.
 - Open-source governance, maintenance, contribution, and security policies.
 
-[Unreleased]: https://github.com/SoBatista/sobatista-terminal/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/SoBatista/sobatista-terminal/compare/v0.1.1...HEAD
+[0.1.2]: https://github.com/SoBatista/sobatista-terminal/releases/tag/v0.1.2
 [0.1.1]: https://github.com/SoBatista/sobatista-terminal/releases/tag/v0.1.1
 [0.1.0]: https://github.com/SoBatista/sobatista-terminal/releases/tag/v0.1.0
