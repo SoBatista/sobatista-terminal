@@ -8,14 +8,11 @@
  *
  * It is scoped to Terminator windows and does not affect other applications.
  *
- * Apply it by importing it from your own GTK stylesheet (recommended, so it
- * never clobbers existing rules):
- *
- *     mkdir -p ~/.config/gtk-3.0
- *     printf '@import url("file://%s/.config/terminator/gtk.css");\n' "$HOME" \
- *         >> ~/.config/gtk-3.0/gtk.css
- *
- * Then restart Terminator. See docs/customization.md for details and removal.
+ * Apply it by importing this file from your own GTK stylesheet (recommended, so
+ * it never clobbers existing rules): add an @import rule to your
+ * ~/.config/gtk-3.0/gtk.css that references this file at its absolute path,
+ * ~/.config/terminator/gtk.css. Then restart Terminator. The customization
+ * guide gives the exact one-line import command plus details and removal steps.
  */
 
 .terminator-terminal-window paned > separator,
