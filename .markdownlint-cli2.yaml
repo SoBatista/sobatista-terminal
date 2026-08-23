@@ -3,6 +3,14 @@ config:
   MD013: false
   MD033: false
   MD041: false
+  # Keep a Changelog gives every released version its own "### Added" /
+  # "### Fixed" heading, so MD024's default (no duplicate heading anywhere in a
+  # document) fails as soon as a second version exists — it would have blocked
+  # the release after 0.1.0 whatever that release contained. siblings_only keeps
+  # the rule where it is useful: a repeated heading inside one version section
+  # is still an error.
+  MD024:
+    siblings_only: true
 globs:
   - "**/*.md"
 ignores:
