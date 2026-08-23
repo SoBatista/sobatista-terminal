@@ -47,8 +47,8 @@ Run `scripts/capture-demo.sh diagnostics` before every capture.
 
 ## 1. Main hero terminal
 
-Open a single-pane `default` Terminator layout/profile at 1600 × 900 in the
-repository root, then start screenshot mode and run the demo:
+Open a single-pane window on the solid `BlackIce-Solid` profile at 1600 × 900 in
+the repository root, then start screenshot mode and run the demo:
 
 ```bash
 SOBATISTA_SCREENSHOT_MODE=1 exec bash
@@ -77,7 +77,7 @@ sobatista@blackice identity, Git status, and a deterministic project summary.”
 
 ## 2. AI help
 
-Use the same `default` profile and dimensions in the repository root. Run:
+Use the same solid profile and dimensions in the repository root. Run:
 
 ```bash
 clear
@@ -100,8 +100,9 @@ Codex commands.”
 
 ## 3. Model selection menu
 
-Ensure only non-sensitive model names appear in `ollama list`. Use the `default`
-profile at 1600 × 900 in the repository root. Run:
+Ensure only non-sensitive model names appear in `ollama list`. Use the solid
+profile at 1600 × 900 in the repository root — `privacy` opens one in the current
+directory. Run:
 
 ```bash
 clear
@@ -120,7 +121,21 @@ models.”
 ## 4. AI-Workbench layout
 
 Open `terminator -l AI-Workbench` at 1600 × 900 or 1920 × 1080. All panes must be
-in the repository root. Prepare:
+in the repository root.
+
+This is the one capture that cannot use the solid profile: the `AI-Workbench`
+layout sets `profile = default` on each of its three terminals, and `-p` does not
+override a layout's per-terminal profile. The capture is therefore made on the
+subtly transparent profile, so clear the desktop behind the window first — a
+transparent background shows whatever is behind it. Start Terminator itself in
+screenshot mode so every pane inherits the safe identity, then confirm the
+identity in all three panes before sending the file:
+
+```bash
+SOBATISTA_SCREENSHOT_MODE=1 terminator --no-dbus -l AI-Workbench
+```
+
+Prepare:
 
 ```bash
 # Left pane
@@ -144,7 +159,7 @@ and two stacked side panes.”
 
 ## 5. Optional diagnostics/update view
 
-Use the `default` profile at 1600 × 900 in the repository root. Prefer the
+Use the solid profile at 1600 × 900 in the repository root. Prefer the
 deterministic, non-mutating diagnostics output:
 
 ```bash

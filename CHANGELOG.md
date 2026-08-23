@@ -51,6 +51,13 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   default setting would have failed the first release after `0.1.0` regardless
   of its content; duplicate headings inside a single version section are still
   reported.
+- Made the screenshot guide's capture instructions self-consistent. Its shared
+  settings require the opaque `BlackIce-Solid` profile because a transparent
+  background leaks whatever is behind the window, but every numbered capture then
+  said to use the transparent `default` profile. The numbered captures now match
+  the rule, and the `AI-Workbench` capture states the real constraint: that layout
+  pins `profile = default` on each of its terminals and `-p` cannot override it,
+  so that one capture is transparent and the desktop behind it must be cleared.
 - Documented the missing copy step for the opt-in Terminator separator
   stylesheet. The customization guide imported `~/.config/terminator/gtk.css`,
   which the installer does not create, and GTK ignores an `@import` whose target
