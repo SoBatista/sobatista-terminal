@@ -120,6 +120,19 @@ separators, and there is no clock:
 - **Directory** — the path, shortened to its last three components.
 - **Git branch** — only inside a repository.
 - **Git state** — only the counters that currently apply.
+- **Project version** — `pkg v<version>`, read from the project manifest
+  (PEP 621 `pyproject.toml`, `Cargo.toml`, `package.json`, …), only when one
+  declares a version.
+- **Language runtime** — e.g. `py<version>` for the active Python interpreter
+  (with `#venv` when a virtualenv is active), only in that project type.
+
+Segments render in this order: identity, directory, Git branch, Git state,
+project version, language runtime, then the conditional command duration and
+failure status. A Python project therefore reads like:
+
+```text
+sobatista@blackice  …/sobatista-ai  main  !5?20  pkg v0.1.0  py3.13.5
+```
 
 The prompt character sits on its own line: a green `❯` after success, and a red
 `❯` (with the exit code) after a failed command. `cmd_duration` appears only
@@ -134,7 +147,17 @@ after a command slower than two seconds.
 | `✘N` | N deleted | `*N` | N stashed |
 
 Green marks progress, amber a dirty working tree, and red a conflict,
-divergence, or deletion. `termhelp git` prints the same legend.
+divergence, or deletion. Two more segments carry version state, kept distinct
+from Git and from each other:
+
+| Segment | Meaning |
+| --- | --- |
+| `pkg v0.1.0` | project/package version from its manifest — **not** the package-manager version |
+| `py3.13.5` | active Python runtime version — **not** the application release |
+| `!5` | five modified tracked files |
+| `?20` | twenty untracked files |
+
+`termhelp git` prints the same legend.
 
 For screenshots and demos, replace the real identity with a deterministic
 `sobatista@blackice` — without touching your username or hostname, and without

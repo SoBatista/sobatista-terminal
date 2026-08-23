@@ -12,7 +12,7 @@ The palette has a narrow role for every color:
 | Terminal green | `#00E68A` | Success, identity, staged and ahead Git state. |
 | Ice cyan | `#5EEBFF` | Directory and restrained runtime highlights. |
 | Teal | `#22C7A9` | Containers and secondary accents. |
-| Main text | `#D6E7E9` | Primary readable content. |
+| Main text | `#D6E7E9` | Primary readable content and the `pkg` project version. |
 | Muted text | `#64748B` | Duration, untracked, stashed, behind, inactive UI. |
 | Warning amber | `#F5C451` | Modified and read-only (dirty) state. |
 | Error red | `#FF4D5A` | Failed commands, conflicts, divergence, deletions. |
@@ -42,6 +42,13 @@ only when non-zero, `cmd_duration` only past `min_time` (2s), and the exit code
 only after a failing command. Keep `git_status` styling within the palette:
 amber for modified, green for staged/ahead, muted for untracked/stashed/behind,
 and red for conflicts, divergence, and deletions.
+
+The `package` module shows `pkg v<version>` in neutral main text, read from the
+project manifest by Starship — it never runs project code, a package manager, or
+the network. It is deliberately distinct from the language runtime: `python`
+renders `py<version>` (with `#venv` when active), the interpreter version, not
+the project release. Both share `bg:secondary` and vanish outside their project
+type, so the connected bar stays intact.
 
 Validate after editing:
 

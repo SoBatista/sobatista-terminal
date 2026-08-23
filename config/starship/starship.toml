@@ -9,7 +9,7 @@ palette = "black_ice"
 # language or container context, so the bar stays seamless whether or not those
 # conditional modules are present. Every conditional module renders nothing when
 # empty, so there are no placeholder capsules. The prompt character is on line 2.
-format = "[](fg:surface)$os$env_var[](fg:surface bg:secondary)$directory$git_branch$git_status$c$rust$golang$nodejs$bun$php$java$kotlin$haskell$python$docker_context$conda[](fg:secondary)$cmd_duration$line_break$status$character"
+format = "[](fg:surface)$os$env_var[](fg:surface bg:secondary)$directory$git_branch$git_status$package$c$rust$golang$nodejs$bun$php$java$kotlin$haskell$python$docker_context$conda[](fg:secondary)$cmd_duration$line_break$status$character"
 
 [os]
 disabled = false
@@ -73,6 +73,17 @@ staged = "[+${count}](fg:green bg:secondary)"
 renamed = "[»${count}](fg:cyan bg:secondary)"
 deleted = "[✘${count}](bold fg:error bg:secondary)"
 
+# Project/package version read from the manifest (PEP 621 pyproject.toml,
+# Cargo.toml, package.json, ...). Starship parses the manifest as text and
+# never executes or imports project code. The "pkg" label and neutral main
+# text keep it distinct from the language runtime; it disappears cleanly when
+# no supported manifest version exists.
+[package]
+version_format = "v${raw}"
+display_private = false
+style = "bg:secondary fg:text"
+format = "[ pkg $version ]($style)"
+
 [c]
 style = "bg:secondary fg:cyan"
 format = "[ $symbol( $version) ]($style)"
@@ -111,7 +122,8 @@ format = "[ $symbol( $version) ]($style)"
 
 [python]
 style = "bg:secondary fg:cyan"
-format = '[ $symbol( $version)((#$virtualenv)) ]($style)'
+version_format = "${raw}"
+format = '[ py$version(#$virtualenv) ]($style)'
 
 [docker_context]
 style = "bg:secondary fg:teal"

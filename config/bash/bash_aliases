@@ -873,6 +873,10 @@ EOF
     ✘N  N deleted                  *N  N stashed
   A clean branch shows its name alone. Green means progress, amber a dirty
   tree, red a conflict, divergence, or deletion.
+
+  Version modules (not Git):
+    pkg vX   project/package version from the manifest (not the package manager)
+    pyX      active Python runtime version (not the application release)
 EOF
             ;;
         shell)
