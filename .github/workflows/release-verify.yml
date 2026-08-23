@@ -1,0 +1,129 @@
+name: Release verification
+
+# Post-release only, and deliberately manual.
+#
+# A pull request cannot install from its own tag: the release workflow creates
+# `vX.Y.Z` and the GitHub Release only after that pull request is merged. CI
+# therefore validates the release *shape* (tests/release-install.bats installs
+# from a tracked-files-only archive), and this workflow validates the real
+# published artifact once it exists. Running it is the documented post-release
+# step in docs/maintenance.md; it is never a required pull-request check.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to verify, for example v0.1.1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-verify-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  published-tarball:
+    name: install from the published release tarball
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ github.event.inputs.tag }}
+    steps:
+      - name: Check out the requested tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.inputs.tag }}
+          fetch-depth: 0
+
+      - name: Require a published, non-draft, non-prerelease GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::Not a release tag: $TAG"; exit 1 ;;
+          esac
+          metadata=$(gh release view "$TAG" \
+            --json tagName,isDraft,isPrerelease,publishedAt)
+          echo "$metadata"
+          echo "$metadata" | jq -e '.isDraft == false' >/dev/null
+          echo "$metadata" | jq -e '.isPrerelease == false' >/dev/null
+          echo "$metadata" | jq -e '.publishedAt != null' >/dev/null
+          echo "$metadata" | jq -e --arg tag "$TAG" '.tagName == $tag' >/dev/null
+          # The tag must still point at the commit this job checked out.
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "$TAG^{commit}")"
+
+      - name: Download the published source tarball
+        run: |
+          set -Eeuo pipefail
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+          echo "Source: $url"
+          curl -fL --retry 3 --connect-timeout 15 -o /tmp/release-source.tar.gz "$url"
+          sha256sum /tmp/release-source.tar.gz
+          mkdir -p /tmp/release-source
+          tar -xzf /tmp/release-source.tar.gz -C /tmp/release-source
+          find /tmp/release-source -maxdepth 1 -mindepth 1 -type d
+
+      - name: Prove the tarball matches the tag exactly
+        run: |
+          set -Eeuo pipefail
+          extracted=$(find /tmp/release-source -maxdepth 1 -mindepth 1 -type d | head -n 1)
+          test -n "$extracted"
+          echo "RELEASE_SOURCE=$extracted" >>"$GITHUB_ENV"
+          mkdir -p /tmp/tag-archive
+          git archive --format=tar "$TAG" | tar -x -C /tmp/tag-archive
+          # Byte-for-byte comparison of every file, in both directions.
+          diff -r --no-dereference /tmp/tag-archive "$extracted"
+          test ! -e "$extracted/.git"
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bats ripgrep python3-configobj
+
+      - name: Install from the published tarball into a temporary HOME
+        run: |
+          set -Eeuo pipefail
+          test "$(id -u)" -ne 0
+          export HOME=/tmp/release-verify-home
+          export XDG_STATE_HOME=/tmp/release-verify-state
+          mkdir -p "$HOME" "$XDG_STATE_HOME"
+
+          bash "$RELEASE_SOURCE/install.sh" --self-test
+          bash "$RELEASE_SOURCE/install.sh" --configs-only --dry-run --yes
+          test ! -e "$HOME/.bashrc"
+          bash "$RELEASE_SOURCE/install.sh" --configs-only --yes
+
+          for relative in .bashrc .bash_aliases .inputrc \
+            .config/starship.toml .config/terminator/config; do
+            test -s "$HOME/$relative"
+            test "$(stat -c '%a' "$HOME/$relative")" = 600
+          done
+          test -s "$XDG_STATE_HOME/sobatista-terminal/install-manifest.tsv"
+          python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' \
+            "$HOME/.config/starship.toml"
+          python3 -c 'import sys; from configobj import ConfigObj; ConfigObj(sys.argv[1], list_values=False)["layouts"]["AI-Workbench"]' \
+            "$HOME/.config/terminator/config"
+
+          bash -n "$HOME/.bashrc" "$HOME/.bash_aliases"
+          TERM=dumb bash --noprofile --rcfile "$HOME/.bashrc" -ic '
+            [[ $(type -t termhelp) == function ]] &&
+            [[ $(type -t qm) == function ]] &&
+            [[ $(type -t privacy) == function ]] &&
+            alias gup >/dev/null &&
+            termhelp dev >/dev/null
+          '
+
+          bash "$RELEASE_SOURCE/uninstall.sh" --yes
+          for relative in .bashrc .bash_aliases .inputrc \
+            .config/starship.toml .config/terminator/config; do
+            test ! -e "$HOME/$relative"
+          done
+
+      - name: Run the release-shape suite against the published tag
+        env:
+          SOBATISTA_RELEASE_REF: ${{ github.event.inputs.tag }}
+        run: bats tests/release-install.bats
