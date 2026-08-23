@@ -35,7 +35,9 @@ jobs:
 
       - name: Scan Git history with Gitleaks
         run: |
+          # Gitleaks v8.24.3 takes the repository as a positional argument;
+          # the removed --repo-path flag would fail with "unknown flag".
           docker run --rm \
             --volume "$PWD:/repo:ro" \
             zricethezav/gitleaks:v8.24.3 \
-            git --repo-path=/repo --redact --no-banner
+            git --redact --no-banner /repo

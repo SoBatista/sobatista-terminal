@@ -4,6 +4,18 @@ load helpers/test_helper
 
 setup() {
     make_test_home
+    # Sandbox every XDG base directory under the per-test HOME so a model
+    # selection persisted by one test (or an externally set XDG_CONFIG_HOME on
+    # the runner) can never leak into another test's default-model resolution.
+    export XDG_CONFIG_HOME="$TEST_HOME/.config"
+    export XDG_STATE_HOME="$TEST_HOME/.local/state"
+    export XDG_CACHE_HOME="$TEST_HOME/.cache"
+    export XDG_DATA_HOME="$TEST_HOME/.local/share"
+    mkdir -p \
+        "$XDG_CONFIG_HOME" \
+        "$XDG_STATE_HOME" \
+        "$XDG_CACHE_HOME" \
+        "$XDG_DATA_HOME"
     MOCK_LOG="$BATS_TEST_TMPDIR/ollama-args"
     MOCK_INPUT="$BATS_TEST_TMPDIR/ollama-input"
     export MOCK_LOG MOCK_INPUT
@@ -111,4 +123,30 @@ q "interactive words with spaces"'
         '
     [ "$status" -eq 0 ]
     [[ $output == *'selected=qwen2.5-coder:7b'* ]]
+}
+
+@test "an externally polluted XDG_CONFIG_HOME cannot leak into the default model" {
+    # A non-default model persisted in a would-be runner-global XDG_CONFIG_HOME.
+    poison="$BATS_TEST_TMPDIR/runner-config"
+    mkdir -p "$poison/sobatista-terminal"
+    printf 'qwen3-coder:30b\n' >"$poison/sobatista-terminal/model"
+
+    # The subshell inherits that poisoned XDG_CONFIG_HOME, then applies the same
+    # per-test sandbox that setup() uses. The sandbox must win: the state path
+    # stays under the test HOME and the default model is resolved, never the
+    # poisoned value, and the external file is left untouched.
+    run env -u LOCAL_LLM_MODEL -u LOCAL_LLM_MODEL_STATE \
+        HOME="$TEST_HOME" XDG_CONFIG_HOME="$poison" \
+        PATH="$BATS_TEST_TMPDIR/bin:$PATH" REPO_ROOT="$REPO_ROOT" \
+        bash --noprofile --norc -c '
+            export XDG_CONFIG_HOME="$HOME/.config"
+            mkdir -p "$XDG_CONFIG_HOME"
+            source "$REPO_ROOT/config/bash/bash_aliases"
+            printf "state=%s\nselected=%s\n" "$LOCAL_LLM_MODEL_STATE" "$LOCAL_LLM_MODEL"
+        '
+    [ "$status" -eq 0 ]
+    [[ $output == *"state=$TEST_HOME/.config/sobatista-terminal/model"* ]]
+    [[ $output == *'selected=qwen2.5-coder:7b'* ]]
+    [[ $output != *'qwen3-coder:30b'* ]]
+    [[ "$(cat "$poison/sobatista-terminal/model")" == 'qwen3-coder:30b' ]]
 }
