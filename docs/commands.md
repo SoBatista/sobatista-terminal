@@ -177,11 +177,13 @@ Codex auth, MCP configuration, sessions, hooks, or rollout databases.
 | `rgall` | Alias | Search hidden files with ripgrep while excluding `.git`. |
 | `hgrep` | Alias | Search shell history with ripgrep. |
 | `workbench` | Alias | Open Terminator's `AI-Workbench` layout. |
+| `privacy` | Function | Open a new solid `BlackIce-Solid` Terminator window (opaque, for screen sharing) in the current directory; leaves the current terminal untouched and fails clearly if Terminator is absent. |
 | `fd` | Conditional alias | Map to Debian/Ubuntu's `fdfind` name when present. |
 | `bat` | Conditional alias | Map to Debian/Ubuntu's `batcat` name when present. |
 | `sysinfo` | Conditional alias | Run `fastfetch` when present. |
 | `cbcopy` | Conditional alias | Copy through Wayland `wl-copy` or X11 `xclip`. |
 | `cbpaste` | Conditional alias | Paste through Wayland `wl-paste` or X11 `xclip`. |
 
-`termhelp` topics are `keys`, `ai`, `git`, `shell`, `updates`, `security`, and
-`discovery`. When `fzf` is absent, pass the topic or command explicitly.
+`termhelp` topics are `keys`, `ai`, `git`, `shell`, `updates`, `security`,
+`privacy`, and `discovery`. When `fzf` is absent, pass the topic or command
+explicitly.

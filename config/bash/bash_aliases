@@ -377,6 +377,21 @@ fi
 
 alias workbench='terminator -l AI-Workbench'
 
+# Open a new solid, screen-sharing-safe Black Ice window (the BlackIce-Solid
+# profile) in the current directory. The normal profile is subtly transparent;
+# this one is opaque for screenshots, presentations, recordings, and screen
+# sharing. It does not change the current terminal or any already-open pane, and
+# full-screen apps may still paint their own background.
+privacy() {
+    command -v terminator >/dev/null 2>&1 || {
+        printf 'Terminator is not installed or not in PATH; cannot open a privacy window.\n' >&2
+        return 127
+    }
+    local -a args=(--no-dbus --profile=BlackIce-Solid --working-directory="$PWD")
+    terminator "${args[@]}" >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+}
+
 # Local Qwen through Ollama ----------------------------------------------
 export LOCAL_LLM_MODEL_STATE="${XDG_CONFIG_HOME:-$HOME/.config}/sobatista-terminal/model"
 export LOCAL_LLM_MODEL_DEFAULT='qwen2.5-coder:7b'
@@ -809,10 +824,11 @@ termhelp() {
                 'updates - explicit update boundaries' \
                 'security - authorized-testing helpers' \
                 'discovery - command documentation tools' \
+                'privacy - solid terminal profile for screen sharing' \
                 | fzf --prompt='Help topic > ' --height=60% --border=rounded) || return
             topic=${topic%% *}
         else
-            printf 'Usage: termhelp {keys|ai|git|shell|updates|security|discovery}\n'
+            printf 'Usage: termhelp {keys|ai|git|shell|updates|security|privacy|discovery}\n'
             return 0
         fi
     fi
@@ -931,8 +947,22 @@ EOF
   declare -F         list functions
 EOF
             ;;
+        privacy)
+            cat <<'EOF'
+BLACK ICE TERMINAL PROFILES
+  Normal terminal   90% Black Ice transparency (the shipped default profile)
+  privacy           open a new SOLID Black Ice window in the current directory
+  workbench         open the AI-Workbench three-pane layout
+
+Use privacy for screenshots, presentations, recordings, and screen sharing: it
+opens a fully opaque BlackIce-Solid window and never changes the current one or
+its panes. Full-screen apps (editors, pagers, Codex, Claude) may still draw
+their own background. Terminal transparency is a Terminator profile setting,
+separate from the shell's SOBATISTA_SCREENSHOT_MODE prompt identity.
+EOF
+            ;;
         *)
-            printf 'Unknown topic: %s\nUsage: termhelp {keys|ai|git|shell|updates|security|discovery}\n' \
+            printf 'Unknown topic: %s\nUsage: termhelp {keys|ai|git|shell|updates|security|privacy|discovery}\n' \
                 "$topic" >&2
             return 2
             ;;

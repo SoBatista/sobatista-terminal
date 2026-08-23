@@ -29,14 +29,15 @@ raise SystemExit(2)
 PY
 }
 
-@test "the default profile is subtly transparent at darkness 0.94 on #070B0D" {
+@test "the default profile is subtly transparent at exactly 0.90 on #070B0D" {
     [ "$(profile_value default background_type)" = "transparent" ]
-    [ "$(profile_value default background_darkness)" = "0.94" ]
+    [ "$(profile_value default background_darkness)" = "0.90" ]
     [ "$(profile_value default background_color)" = "#070B0D" ]
 }
 
-@test "a solid BlackIce-Solid profile exists and uses #070B0D" {
+@test "a solid BlackIce-Solid profile exists at darkness 1.0 on #070B0D" {
     [ "$(profile_value BlackIce-Solid background_type)" = "solid" ]
+    [ "$(profile_value BlackIce-Solid background_darkness)" = "1.0" ]
     [ "$(profile_value BlackIce-Solid background_color)" = "#070B0D" ]
 }
 
@@ -70,7 +71,7 @@ c = ConfigObj(sys.argv[1], raise_errors=True)
 p = c["profiles"]
 ok = (
     p["default"]["background_type"] == "transparent"
-    and p["default"]["background_darkness"] == "0.94"
+    and p["default"]["background_darkness"] == "0.90"
     and p["BlackIce-Solid"]["background_type"] == "solid"
     and "AI-Workbench" in c["layouts"]
 )

@@ -107,15 +107,19 @@ terminator -p default
 terminator -l AI-Workbench
 ```
 
-The `default` profile is subtly transparent (near-black `#070B0D` at 94 %
+The `default` profile is subtly transparent (near-black `#070B0D` at 90 %
 opacity). A fully opaque **`BlackIce-Solid`** profile is included for
 screenshots, screen sharing, livestreaming, presentations, or working over
 sensitive content — a transparent background can reveal what is behind the
-window:
+window. Open one in the current directory with the `privacy` command:
 
 ```bash
-terminator --no-dbus --profile=BlackIce-Solid
+privacy   # = terminator --no-dbus --profile=BlackIce-Solid --working-directory="$PWD"
 ```
+
+`privacy` opens a new solid window and never changes the current terminal or its
+panes; full-screen apps may still paint their own background. `termhelp privacy`
+explains it.
 
 `AI-Workbench` opens one large left pane and two stacked right panes. See
 [customization](docs/customization.md) before changing split ratios or colors.
@@ -227,7 +231,8 @@ cmdhelp                     # fuzzy command picker (alias: ch)
 cmdhelp gup                 # alias resolution and definition
 ```
 
-Topics: `keys`, `ai`, `git`, `shell`, `updates`, `security`, and `discovery`.
+Topics: `keys`, `ai`, `git`, `shell`, `updates`, `security`, `privacy`, and
+`discovery`.
 The exhaustive public command reference is in [commands](docs/commands.md).
 
 ![SoBatista Terminal termhelp ai output in the Black Ice theme: the selected local model, direct Ollama commands, and separately grouped cloud and local Codex commands.](docs/assets/screenshots/termhelp-ai.png)
@@ -258,7 +263,7 @@ expansions, safety notes, and conditional-dependency details.
   `qstop`, and `qstopall`.
 - Codex: `cx`, `cxask`, `cxr`, `cxer`, `cxd`, `cxl`, `cxlask`, and `cxlr`.
 - Help and optional tools: `termhelp`, `th`, `cmdhelp`, `ch`, `rgall`, `hgrep`,
-  `workbench`, `fd`, `bat`, `sysinfo`, `cbcopy`, and `cbpaste`.
+  `workbench`, `privacy`, `fd`, `bat`, `sysinfo`, `cbcopy`, and `cbpaste`.
 
 > [!WARNING]
 > `nmap_*`, TLS, DNS, HTTP, and Burp helpers are for systems you own or are

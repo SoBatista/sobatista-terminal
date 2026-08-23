@@ -118,31 +118,35 @@ with a faint hint of the desktop behind it:
 
 ```ini
     background_type = transparent
-    background_darkness = 0.94
+    background_darkness = 0.90
     background_color = "#070B0D"
 ```
 
-`background_darkness = 0.94` keeps the terminal ~94% opaque, so the `#070B0D`
+`background_darkness = 0.90` keeps the terminal 90% opaque, so the `#070B0D`
 appearance and text contrast are preserved while the background is gently
 see-through. Lower it for more transparency; raise it toward `1.0` for less.
 Restart Terminator to apply a change.
 
-A second profile, **`BlackIce-Solid`**, is fully opaque for when transparency is
-a liability:
+A second profile, **`BlackIce-Solid`**, is fully opaque (`background_darkness =
+1.0`) for when transparency is a liability:
 
 ```ini
     background_type = solid
+    background_darkness = 1.0
     background_color = "#070B0D"
 ```
 
 Prefer `BlackIce-Solid` for screenshots, livestreaming, screen sharing,
 presentations, and any time sensitive desktop content sits behind the terminal —
-a transparent background can leak whatever is behind the window. Launch an
-isolated process on that profile with:
+a transparent background can leak whatever is behind the window. The `privacy`
+command opens a new solid window in the current directory:
 
 ```bash
-terminator --no-dbus --profile=BlackIce-Solid
+privacy   # terminator --no-dbus --profile=BlackIce-Solid --working-directory="$PWD"
 ```
+
+It never changes the current terminal or its panes. `termhelp privacy` documents
+it.
 
 Terminal background opacity is a Terminator profile setting and is unrelated to
 the shell's `SOBATISTA_SCREENSHOT_MODE`, which only changes the displayed prompt
