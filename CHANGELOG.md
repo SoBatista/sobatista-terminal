@@ -40,6 +40,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   documented command was reported as undocumented. Membership now resolves
   through an associative array, so `scripts/self-test.sh` and the CI quality job
   no longer fail intermittently on early-sorting names such as `burp_off`.
+- Re-run pull-request validation when a release label changes. CI read
+  `github.event.pull_request.labels`, a snapshot taken when the event fired, but
+  did not subscribe to `labeled`/`unlabeled`. Following the documented flow —
+  open the pull request, then apply exactly one `release:*` label — therefore
+  left `release metadata` failing on a stale empty label list, clearable only by
+  a manual rerun or an unrelated push.
 - Configured `MD024` with `siblings_only` so Markdown linting accepts the
   repeated `### Added` / `### Fixed` headings that Keep a Changelog requires. The
   default setting would have failed the first release after `0.1.0` regardless
