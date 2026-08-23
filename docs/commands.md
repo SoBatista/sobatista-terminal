@@ -187,5 +187,5 @@ Codex auth, MCP configuration, sessions, hooks, or rollout databases.
 | `cbpaste` | Conditional alias | Paste through Wayland `wl-paste` or X11 `xclip`. |
 
 `termhelp` topics are `keys`, `ai`, `git`, `shell`, `updates`, `security`,
-`privacy`, and `discovery`. When `fzf` is absent, pass the topic or command
-explicitly.
+`privacy`, `dev`, and `discovery` (`discover` is accepted for `discovery`). When
+`fzf` is absent, pass the topic or command explicitly.

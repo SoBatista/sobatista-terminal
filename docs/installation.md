@@ -15,17 +15,44 @@ unchanged project file from a later user edit.
 The installer never deletes an existing user file, never reads Codex auth or
 session state, and never uses `curl | sh`.
 
-## Inspect, validate, and install
+## Choose a source: tagged release or development branch
+
+The installer works from whatever tree it is run in, so the tree you choose is
+the decision that matters.
+
+| Audience | Source | Consequence |
+| --- | --- | --- |
+| Stable users | A tagged release, `vX.Y.Z` | Fixed, reviewed configuration that does not change until you switch tags. |
+| Contributors | A branch of your own checkout | The configuration changes with every fetch, switch, or edit. |
+
+`main` is development state, not a supported release; security fixes target the
+latest tagged `0.x` release (see [the security policy](../SECURITY.md)). A plain
+`git clone` leaves you on `main`, so a stable install must select a tag
+explicitly. There is deliberately no `curl | bash` installer and no command that
+downloads and executes remote code without inspection.
+
+## Stable install: inspect, validate, and install a tagged release
 
 ```bash
 git clone https://github.com/SoBatista/sobatista-terminal.git
 cd sobatista-terminal
+git fetch --tags
+git tag --list 'v*' --sort=-version:refname   # newest release first
+git switch --detach vX.Y.Z                    # the release you reviewed
+git describe --tags --exact-match             # confirm the exact tag
 git log -1 --oneline
 less install.sh
 bash install.sh --self-test
 bash install.sh --dry-run
 bash install.sh
 ```
+
+Release notes and source archives are published on the
+[releases page](https://github.com/SoBatista/sobatista-terminal/releases/latest).
+A downloaded archive contains the same tracked files as the tag and installs the
+same way once extracted and inspected; no per-version download URL is hardcoded
+here because it would go stale on every release. To update, fetch tags again and
+switch to the next release you have read.
 
 Options:
 
@@ -94,6 +121,12 @@ sequence into `curl | sh`.
 ~/.config/terminator/config
 ```
 
+Two shipped files are deliberately outside that list because they are opt-in and
+therefore outside the install manifest, so `uninstall.sh` never touches them:
+`config/terminator/gtk.css` (the Black Ice pane-separator stylesheet, see the
+[customization guide](customization.md#pane-separators)) and the Codex example
+below. Copy either one yourself if you want it.
+
 The Codex example is not copied automatically. `cxl` does not need it. Review
 and opt in manually if a standalone profile is useful:
 
@@ -145,8 +178,16 @@ is idempotent, supports `--dry-run`, reports copy/link/unchanged/backed-up per
 file, and is rejected with `--self-test`. Use `termdev_status` to see each
 file's state and `termreload` to validate and reload after editing. Editing
 `config/bash/*` then affects every newly opened shell; already-running shells do
-not reload automatically. The copy-based install remains the public default. See
-the [customization guide](customization.md#developer-mode-live-linked-shell-configuration).
+not reload automatically.
+
+Because the checkout is the live source of truth, the branch that is checked out
+decides what the next shell you open runs. Switching to a branch you have not
+read — a colleague's pull request, a fork, an automated update — changes newly
+opened shells without any further action. Use `--dev-link` only with code you
+trust, and return to the copy-based install (`bash install.sh --configs-only`)
+when you are done contributing. The copy-based install remains the public
+default. See the
+[customization guide](customization.md#developer-mode-live-linked-shell-configuration).
 
 ## Rollback and uninstall
 

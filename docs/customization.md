@@ -99,17 +99,24 @@ change; Terminator may rewrite unrelated preferences.
 Terminator draws the split handle with the GTK theme, which on a light desktop
 theme renders an almost-white divider. `config/terminator/config` sets a thin
 `handle_size = 1`, and `config/terminator/gtk.css` repaints only Terminator's
-separators in muted Black Ice slate (`#18222C`). It is opt-in so it never
-clobbers an existing GTK stylesheet — import it from your own:
+separators in muted Black Ice slate (`#18222C`).
+
+The stylesheet is entirely opt-in: `install.sh` does **not** copy it, and it is
+not in the install manifest, so `uninstall.sh` never removes it either. Enabling
+it is therefore two explicit steps — copy the file, then import it from your own
+GTK stylesheet so this project never clobbers rules you already have:
 
 ```bash
+install -Dm600 config/terminator/gtk.css ~/.config/terminator/gtk.css
 mkdir -p ~/.config/gtk-3.0
 printf '@import url("file://%s/.config/terminator/gtk.css");\n' "$HOME" \
     >> ~/.config/gtk-3.0/gtk.css
 ```
 
-Restart Terminator to apply it. Remove that single `@import` line to revert. The
-rule is scoped to Terminator windows and does not affect other applications.
+Restart Terminator to apply it. GTK silently ignores an `@import` whose target is
+missing, so if the separators stay bright, check that the copy step above
+actually ran. Remove the single `@import` line (and the copied file) to revert.
+The rule is scoped to Terminator windows and does not affect other applications.
 
 ### Background opacity and the solid profile
 

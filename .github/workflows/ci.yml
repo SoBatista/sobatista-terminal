@@ -2,6 +2,19 @@ name: CI
 
 on:
   pull_request:
+    # `labeled`/`unlabeled` are added to the default
+    # (opened, synchronize, reopened) because the release-metadata job reads
+    # github.event.pull_request.labels, which is a snapshot taken when the event
+    # fired. Applying the required release:* label after opening the pull
+    # request therefore left a stale failing check that nothing re-evaluated:
+    # labelling does not retrigger a workflow that does not subscribe to it, so
+    # it could only be cleared by a manual rerun or an unrelated push.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
   push:
     branches:
       - main
