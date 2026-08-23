@@ -1,0 +1,27 @@
+# SoBatista Terminal — GNU Readline configuration
+
+$include /etc/inputrc
+
+set editing-mode emacs
+set keymap emacs
+set bell-style none
+
+set completion-ignore-case on
+set completion-map-case on
+set show-all-if-ambiguous on
+set show-all-if-unmodified on
+set colored-stats on
+set visible-stats on
+set mark-symlinked-directories on
+set menu-complete-display-prefix on
+set page-completions off
+
+# Up and Down search commands matching the prefix already typed.
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+
+# Ctrl+Left and Ctrl+Right move by one word in common terminal keymaps.
+"\e[1;5D": backward-word
+"\e[1;5C": forward-word
+"\e[5D": backward-word
+"\e[5C": forward-word

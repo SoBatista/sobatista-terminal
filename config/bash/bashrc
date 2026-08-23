@@ -1,0 +1,160 @@
+# shellcheck shell=bash
+# SoBatista Terminal — interactive Bash configuration
+
+# Non-interactive shells should not inherit prompt, completion, or aliases.
+case $- in
+    *i*) ;;
+    *) return ;;
+esac
+
+# Remove duplicate and empty PATH entries. Empty entries mean the current
+# directory and are deliberately omitted from this security-oriented shell.
+_sb_dedupe_path() {
+    local entry joined=''
+    local -a entries=()
+    local -A seen=()
+
+    IFS=: read -r -a entries <<<"${PATH:-}"
+    for entry in "${entries[@]}"; do
+        [[ -n $entry && -z ${seen[$entry]+present} ]] || continue
+        seen[$entry]=1
+        joined+="${joined:+:}$entry"
+    done
+    PATH=$joined
+}
+
+_sb_dedupe_path
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) PATH="$HOME/.local/bin${PATH:+:$PATH}" ;;
+esac
+export PATH
+unset -f _sb_dedupe_path
+
+# Large, deduplicated history shared between Terminator panes.
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTTIMEFORMAT='%F %T  '
+shopt -s histappend
+
+shopt -s autocd
+shopt -s cdspell
+shopt -s checkwinsize
+
+_sb_history_sync() {
+    builtin history -a
+    builtin history -n
+}
+
+case ";${PROMPT_COMMAND:-};" in
+    *';_sb_history_sync;'*) ;;
+    *) PROMPT_COMMAND="_sb_history_sync${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+esac
+
+# Fallback prompt. Starship replaces it at the end when available.
+if [[ $TERM == xterm-color || $TERM == *-256color ]]; then
+    PS1='\[\033[38;2;0;230;138m\]\u@\h\[\033[0m\]:\[\033[38;2;94;235;255m\]\w\[\033[0m\]\$ '
+else
+    PS1='\u@\h:\w\$ '
+fi
+
+case $TERM in
+    xterm* | rxvt*)
+        PS1="\[\e]0;\u@\h: \w\a\]$PS1"
+        ;;
+esac
+
+# GNU colors where available.
+if command -v dircolors >/dev/null 2>&1; then
+    if [[ -r $HOME/.dircolors ]]; then
+        eval "$(dircolors -b "$HOME/.dircolors")"
+    else
+        eval "$(dircolors -b)"
+    fi
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+fi
+
+# Project aliases and functions.
+if [[ -r $HOME/.bash_aliases ]]; then
+    # shellcheck source=config/bash/bash_aliases
+    source "$HOME/.bash_aliases"
+fi
+
+# Programmable completion on all supported distribution families.
+if ! shopt -oq posix; then
+    if [[ -r /usr/share/bash-completion/bash_completion ]]; then
+        # shellcheck disable=SC1091
+        source /usr/share/bash-completion/bash_completion
+    elif [[ -r /etc/bash_completion ]]; then
+        # shellcheck disable=SC1091
+        source /etc/bash_completion
+    fi
+fi
+
+# SoBatista Black Ice styling for fzf.
+export FZF_DEFAULT_OPTS="
+--height=60%
+--layout=reverse
+--border=rounded
+--info=inline
+--prompt='❯ '
+--pointer='◆'
+--marker='✓'
+--color=bg+:#18222C,bg:#070B0D,spinner:#22C7A9,hl:#5EEBFF
+--color=fg:#D6E7E9,header:#5EEBFF,info:#64748B,pointer:#00E68A
+--color=marker:#00E68A,fg+:#D6E7E9,prompt:#00E68A,hl+:#5EEBFF
+--color=border:#18222C,label:#D6E7E9"
+
+if command -v fzf >/dev/null 2>&1; then
+    if fzf_init=$(fzf --bash 2>/dev/null); then
+        eval "$fzf_init"
+    else
+        # Older fzf without `--bash`: source the distribution's shell files.
+        # Debian/Ubuntu/Mint, Fedora, and Arch each place them differently.
+        for _sb_fzf_file in \
+            /usr/share/doc/fzf/examples/key-bindings.bash \
+            /usr/share/fzf/shell/key-bindings.bash \
+            /usr/share/fzf/key-bindings.bash; do
+            if [[ -r $_sb_fzf_file ]]; then
+                # shellcheck disable=SC1090
+                source "$_sb_fzf_file"
+                break
+            fi
+        done
+        for _sb_fzf_file in \
+            /usr/share/doc/fzf/examples/completion.bash \
+            /usr/share/fzf/shell/completion.bash \
+            /usr/share/fzf/completion.bash; do
+            if [[ -r $_sb_fzf_file ]]; then
+                # shellcheck disable=SC1090
+                source "$_sb_fzf_file"
+                break
+            fi
+        done
+        unset _sb_fzf_file
+    fi
+    unset fzf_init
+fi
+
+# Optional integrations activate only when installed.
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init bash)"
+command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"
+
+complete -W 'keys ai git shell updates security privacy dev discovery' termhelp th 2>/dev/null || true
+
+# Prompt identity. The Starship prompt reads SOBATISTA_PROMPT_IDENTITY so that
+# SOBATISTA_SCREENSHOT_MODE=1 shows a deterministic safe identity in captures
+# without ever exposing the real username or hostname. Normal shells keep the
+# real identity. Enter screenshot mode without eval: `SOBATISTA_SCREENSHOT_MODE=1 exec bash`.
+if [[ ${SOBATISTA_SCREENSHOT_MODE:-0} == 1 ]]; then
+    export SOBATISTA_PROMPT_IDENTITY='sobatista@blackice'
+else
+    _sb_host=${HOSTNAME:-$(uname -n 2>/dev/null || printf 'host')}
+    export SOBATISTA_PROMPT_IDENTITY="${USER:-$(id -un 2>/dev/null || printf 'user')}@${_sb_host%%.*}"
+    unset _sb_host
+fi
+
+# Starship owns the final prompt and therefore initializes last.
+command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"

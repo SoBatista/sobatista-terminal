@@ -1,0 +1,25 @@
+/*
+ * SoBatista Terminal — Black Ice pane separators for Terminator.
+ *
+ * Terminator draws the split-pane handle with the GTK theme, which on a light
+ * desktop theme renders an almost-white divider. This stylesheet repaints only
+ * Terminator's paned separators in muted Black Ice slate so the AI-Workbench
+ * panes are divided by a thin, visible-but-quiet line instead of a bright bar.
+ *
+ * It is scoped to Terminator windows and does not affect other applications.
+ *
+ * Apply it by importing this file from your own GTK stylesheet (recommended, so
+ * it never clobbers existing rules): add an @import rule to your
+ * ~/.config/gtk-3.0/gtk.css that references this file at its absolute path,
+ * ~/.config/terminator/gtk.css. Then restart Terminator. The customization
+ * guide gives the exact one-line import command plus details and removal steps.
+ */
+
+.terminator-terminal-window paned > separator,
+.terminator-terminal-window paned > separator:hover {
+    background-image: none;
+    background-color: #18222C;
+    border: none;
+    min-width: 1px;
+    min-height: 1px;
+}
