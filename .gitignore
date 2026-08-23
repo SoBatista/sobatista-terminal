@@ -1,0 +1,62 @@
+# SoBatista Terminal local state
+.sobatista-terminal-backup/
+backups/
+*.bak
+*.bak.*
+*.log
+coverage/
+test-results/
+tmp/
+
+# Local installer bundles and generated demos
+/*-terminal-ai-setup.sh
+/docs/assets/screenshots/*.tmp.*
+
+# Shell history and session material
+.bash_history
+.zsh_history
+.local/share/fish/fish_history
+*.history
+
+# Credentials and private environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+secrets*
+
+# Codex authentication, sessions, databases, hooks, and private providers
+.codex/
+auth.json
+rollout*.jsonl
+sessions/
+session*.db*
+*.sqlite*
+private-hooks/
+
+# Ollama model storage
+.ollama/
+models/
+blobs/
+manifests/
+
+# Pentest/client material must never enter this repository
+engagements/
+evidence/
+loot/
+scans/
+captures/
+burp-projects/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
