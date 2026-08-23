@@ -7,35 +7,61 @@ The palette has a narrow role for every color:
 | Role | Hex | Use |
 | --- | --- | --- |
 | Background | `#070B0D` | Terminal canvas. |
-| Elevated surface | `#111820` | Identity, Git, runtime, and time capsules. |
-| Secondary surface | `#18222C` | Directory and focused UI states. |
-| Terminal green | `#00E68A` | Success, identity, clean Git state. |
+| Elevated surface | `#111820` | Identity segment of the prompt bar. |
+| Secondary surface | `#18222C` | Directory, Git, runtime bar and pane separators. |
+| Terminal green | `#00E68A` | Success, identity, staged and ahead Git state. |
 | Ice cyan | `#5EEBFF` | Directory and restrained runtime highlights. |
 | Teal | `#22C7A9` | Containers and secondary accents. |
 | Main text | `#D6E7E9` | Primary readable content. |
-| Muted text | `#64748B` | Time, duration, inactive UI. |
-| Warning amber | `#F5C451` | Modified/untracked/read-only state. |
-| Error red | `#FF4D5A` | Failed commands, conflicts, deletions. |
+| Muted text | `#64748B` | Duration, untracked, stashed, behind, inactive UI. |
+| Warning amber | `#F5C451` | Modified and read-only (dirty) state. |
+| Error red | `#FF4D5A` | Failed commands, conflicts, divergence, deletions. |
 
 Do not add pink, peach, mauve, lavender, or pastel rainbow sequences. Accent
 colors should remain text/icons on dark surfaces rather than luminous blocks.
 
-## Starship modules
+## Starship prompt
 
-The identity and directory form one always-present powerline group. Every
-optional Git, runtime, container, environment, or time module includes both its
-own opening and closing glyph. Removing an optional module from `format` or
-disabling it therefore cannot expose a duplicated arrow.
+The prompt is one connected Powerline bar written as a single `format` line.
+The identity segment sits on the elevated surface, a single rounded transition
+hands off to the secondary surface, and directory, Git, and every language or
+container module share that secondary surface. Because the conditional modules
+share one background, any of them can be absent without leaving a gap, an
+orphaned separator, or a placeholder capsule — the bar simply closes after the
+last segment that rendered. The clock is intentionally removed and `[time]` is
+disabled; do not re-enable it.
 
-Validate TOML after editing:
+To keep this property when editing:
+
+- Leave `directory` unconditional; it is the anchor that always closes the bar.
+- Give any new segment `bg:secondary` and place it before the closing `` glyph.
+- Never give a middle segment its own background shade or its own closing glyph.
+
+Conditional state renders only when meaningful: `git_status` counters appear
+only when non-zero, `cmd_duration` only past `min_time` (2s), and the exit code
+only after a failing command. Keep `git_status` styling within the palette:
+amber for modified, green for staged/ahead, muted for untracked/stashed/behind,
+and red for conflicts, divergence, and deletions.
+
+Validate after editing:
 
 ```bash
 python3 -c 'import tomllib; tomllib.load(open("config/starship/starship.toml", "rb"))'
 STARSHIP_CONFIG="$PWD/config/starship/starship.toml" starship prompt
 ```
 
-Keep `git_status` symbols individually styled: amber for modified/untracked,
-green for staged/ahead, and red for conflicts/deletions/divergence.
+## Safe screenshot identity
+
+The prompt shows `$SOBATISTA_PROMPT_IDENTITY`, which `config/bash/bashrc` sets to
+your real `user@host` normally and to a deterministic `sobatista@blackice` when
+`SOBATISTA_SCREENSHOT_MODE=1`. Start a safe shell for captures without `eval`:
+
+```bash
+SOBATISTA_SCREENSHOT_MODE=1 exec bash
+```
+
+Leave that shell (`exec bash`, or open a new one) to return to your real
+identity. Screenshot mode changes only the displayed identity, nothing else.
 
 ## Terminator
 
@@ -57,6 +83,23 @@ window0
 Terminator stores split positions in pixels as well as ratios. Adjust positions
 for a preferred monitor, then review the entire config before contributing the
 change; Terminator may rewrite unrelated preferences.
+
+### Pane separators
+
+Terminator draws the split handle with the GTK theme, which on a light desktop
+theme renders an almost-white divider. `config/terminator/config` sets a thin
+`handle_size = 1`, and `config/terminator/gtk.css` repaints only Terminator's
+separators in muted Black Ice slate (`#18222C`). It is opt-in so it never
+clobbers an existing GTK stylesheet — import it from your own:
+
+```bash
+mkdir -p ~/.config/gtk-3.0
+printf '@import url("file://%s/.config/terminator/gtk.css");\n' "$HOME" \
+    >> ~/.config/gtk-3.0/gtk.css
+```
+
+Restart Terminator to apply it. Remove that single `@import` line to revert. The
+rule is scoped to Terminator windows and does not affect other applications.
 
 ## Local shell overrides
 

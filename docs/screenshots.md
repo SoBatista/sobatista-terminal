@@ -11,10 +11,21 @@ sanitization would damage the evidence, recapture it with safe content.
 
 ## Shared capture settings
 
+- Configuration: install the shipped configs first so the real Black Ice
+  background (`#070B0D`) and connected prompt are active: `bash install.sh
+  --configs-only`, then open a fresh Terminator window.
 - Profile: Terminator `default` with SoBatista Black Ice.
 - Font: JetBrainsMono Nerd Font Mono 11.
 - Window: 1600 × 900 pixels where possible; use 1920 × 1080 only if 1600 × 900
   makes the three-pane layout unreadable.
+- Identity: start every capture shell in screenshot mode so the prompt shows the
+  safe `sobatista@blackice` identity instead of the real username and hostname
+  (no `eval`):
+
+  ```bash
+  SOBATISTA_SCREENSHOT_MODE=1 exec bash
+  ```
+
 - Working directory: repository root, with the prompt configured to show only
   the shortened `sobatista-terminal` directory.
 - Browser tabs, desktop notifications, other windows, and personal terminal tabs
@@ -24,28 +35,35 @@ sanitization would damage the evidence, recapture it with safe content.
   needed to identify the layout.
 - Optimize losslessly with `oxipng -o 4 FILE` or an equivalent reviewed tool.
 
+The prompt has no clock; a time value must never appear in any capture.
+
 Run `scripts/capture-demo.sh diagnostics` before every capture.
 
 ## 1. Main hero terminal
 
-Open the `default` Terminator layout/profile at 1600 × 900. Be in the repository
-root. Run:
+Open a single-pane `default` Terminator layout/profile at 1600 × 900 in the
+repository root, then start screenshot mode and run the demo:
 
 ```bash
+SOBATISTA_SCREENSHOT_MODE=1 exec bash
 clear
 scripts/capture-demo.sh hero
 git status --short --branch
 ```
 
-Visible: full prompt identity/directory, Git branch/status capsule, deterministic
-project summary, and successful green prompt character. Hidden: absolute path,
-real host details beyond a deliberately safe screenshot identity, remotes with
-embedded credentials, notifications, IP addresses, and unrelated files.
+Compose so the connected prompt bar and the demo output fill the upper-left of
+the frame with little blank space. Visible: the single connected Black Ice bar
+(`sobatista@blackice` identity, shortened `sobatista-terminal` directory, Git
+branch, and any meaningful Git state), the deterministic project summary, and
+the green success prompt character. Hidden/absent: the clock (removed), the real
+username and hostname (replaced by screenshot mode), absolute paths, credentialed
+remotes, notifications, IP addresses, and unrelated files.
 
 Desired filename: `docs/assets/screenshots/hero-black-ice.png`.
 
-Suggested alt text: “SoBatista Terminal Black Ice prompt in Terminator showing a
-safe project summary and Git status.”
+Suggested alt text: “SoBatista Terminal Black Ice connected prompt in Terminator
+with a safe sobatista@blackice identity, Git status, and a deterministic project
+summary.”
 
 ## 2. AI help
 

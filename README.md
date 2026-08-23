@@ -105,6 +105,42 @@ terminator -l AI-Workbench
 `AI-Workbench` opens one large left pane and two stacked right panes. See
 [customization](docs/customization.md) before changing split ratios or colors.
 
+## The Black Ice prompt
+
+The Starship prompt is a single connected Powerline bar. Each segment appears
+only when it carries state, so there are never empty capsules or duplicated
+separators, and there is no clock:
+
+- **Identity** — distribution glyph and `user@host`.
+- **Directory** — the path, shortened to its last three components.
+- **Git branch** — only inside a repository.
+- **Git state** — only the counters that currently apply.
+
+The prompt character sits on its own line: a green `❯` after success, and a red
+`❯` (with the exit code) after a failed command. `cmd_duration` appears only
+after a command slower than two seconds.
+
+| Indicator | Meaning | Indicator | Meaning |
+| --- | --- | --- | --- |
+| `⇡N` | N commits to push | `⇣N` | N commits to pull |
+| `⇕⇡A⇣B` | branch diverged | `=N` | N merge conflicts |
+| `+N` | N staged | `!N` | N modified |
+| `?N` | N untracked | `»N` | N renamed |
+| `✘N` | N deleted | `*N` | N stashed |
+
+Green marks progress, amber a dirty working tree, and red a conflict,
+divergence, or deletion. `termhelp git` prints the same legend.
+
+For screenshots and demos, replace the real identity with a deterministic
+`sobatista@blackice` — without touching your username or hostname, and without
+`eval`:
+
+```bash
+SOBATISTA_SCREENSHOT_MODE=1 exec bash
+```
+
+Normal shells always show your real configured identity.
+
 ## Local models: direct Ollama
 
 The selected model is stored with mode `0600` at

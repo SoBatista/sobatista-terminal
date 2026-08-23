@@ -3,29 +3,13 @@
 add_newline = true
 palette = "black_ice"
 
-# The identity and directory are always present. Every optional module below
-# owns both sides of its capsule so an empty module cannot leave an orphaned
-# separator.
-format = """
-[](fg:surface)$os$username$hostname[](bg:secondary fg:surface)$directory[](fg:secondary)\
-$git_branch\
-$git_status\
-$c\
-$rust\
-$golang\
-$nodejs\
-$bun\
-$php\
-$java\
-$kotlin\
-$haskell\
-$python\
-$docker_context\
-$conda\
-$time\
-$cmd_duration\
-$line_break\
-$character"""
+# One connected Black Ice Powerline bar kept on a single line so no separator or
+# module can ever be orphaned. Identity sits on the surface shade; the rounded
+# transition hands off to the secondary shade shared by directory, Git, and any
+# language or container context, so the bar stays seamless whether or not those
+# conditional modules are present. Every conditional module renders nothing when
+# empty, so there are no placeholder capsules. The prompt character is on line 2.
+format = "[](fg:surface)$os$env_var[](fg:surface bg:secondary)$directory$git_branch$git_status$c$rust$golang$nodejs$bun$php$java$kotlin$haskell$python$docker_context$conda[](fg:secondary)$cmd_duration$line_break$status$character"
 
 [os]
 disabled = false
@@ -40,131 +24,130 @@ Linux = "󰌽"
 Mint = "󰣭"
 Ubuntu = "󰕈"
 
-[username]
-show_always = true
-style_user = "bg:surface fg:green"
-style_root = "bold bg:surface fg:error"
-format = "[ $user]($style)"
-
-[hostname]
-ssh_only = false
+# Identity comes from the shell as SOBATISTA_PROMPT_IDENTITY so that
+# SOBATISTA_SCREENSHOT_MODE can substitute a safe "sobatista@blackice" identity
+# without exposing the real username or hostname. See config/bash/bashrc.
+[env_var.SOBATISTA_PROMPT_IDENTITY]
+variable = "SOBATISTA_PROMPT_IDENTITY"
+default = "shell"
 style = "bg:surface fg:green"
-format = "[@$hostname ]($style)"
+format = "[ $env_value ]($style)"
 
 [directory]
 style = "bg:secondary fg:cyan"
 format = "[ 󰉋 $path$read_only ]($style)"
-truncation_length = 4
+truncation_length = 3
 truncation_symbol = "…/"
-read_only = ""
+read_only = " 󰌾"
 read_only_style = "bg:secondary fg:warning"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
+"Downloads" = "󰇚 "
 "Music" = "󰝚 "
-"Pictures" = " "
+"Pictures" = "󰋩 "
 "Developer" = "󰲋 "
 "Projects" = "󰲋 "
 
 [git_branch]
-symbol = ""
-style = "bg:surface fg:green"
-format = " [](fg:surface)[ $symbol $branch ]($style)[](fg:surface)"
+symbol = ""
+style = "bg:secondary fg:green"
+format = "[ $symbol $branch ]($style)"
 
+# Only meaningful state renders. Clean repositories show the branch alone; every
+# counter appears only when non-zero. Conflicts and divergence use error red, a
+# dirty working tree uses warning amber, progress uses restrained green, and
+# untracked or stashed context stays muted slate.
 [git_status]
-style = "bg:surface fg:text"
-format = " [](fg:surface)[ $all_status$ahead_behind ]($style)[](fg:surface)"
-conflicted = "[=${count}](bold fg:error)"
-ahead = "[⇡${count}](fg:green)"
-behind = "[⇣${count}](fg:muted)"
-diverged = "[⇕⇡${ahead_count}⇣${behind_count}](bold fg:error)"
+style = "bg:secondary fg:text"
+format = "([ $all_status$ahead_behind ]($style))"
+conflicted = "[=${count}](bold fg:error bg:secondary)"
+ahead = "[⇡${count}](fg:green bg:secondary)"
+behind = "[⇣${count}](fg:muted bg:secondary)"
+diverged = "[⇕⇡${ahead_count}⇣${behind_count}](bold fg:error bg:secondary)"
 up_to_date = ""
-untracked = "[?${count}](fg:warning)"
-stashed = "[*${count}](fg:muted)"
-modified = "[!${count}](fg:warning)"
-staged = "[+${count}](fg:green)"
-renamed = "[»${count}](fg:cyan)"
-deleted = "[✘${count}](fg:error)"
+untracked = "[?${count}](fg:muted bg:secondary)"
+stashed = "[*${count}](fg:muted bg:secondary)"
+modified = "[!${count}](fg:warning bg:secondary)"
+staged = "[+${count}](fg:green bg:secondary)"
+renamed = "[»${count}](fg:cyan bg:secondary)"
+deleted = "[✘${count}](bold fg:error bg:secondary)"
 
 [c]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [rust]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [golang]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [nodejs]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [bun]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [php]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [java]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [kotlin]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [haskell]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = " [](fg:surface)[ $symbol( $version) ]($style)[](fg:surface)"
+style = "bg:secondary fg:cyan"
+format = "[ $symbol( $version) ]($style)"
 
 [python]
-symbol = ""
-style = "bg:surface fg:cyan"
-format = ' [](fg:surface)[ $symbol( $version)((#$virtualenv)) ]($style)[](fg:surface)'
+style = "bg:secondary fg:cyan"
+format = '[ $symbol( $version)((#$virtualenv)) ]($style)'
 
 [docker_context]
-symbol = ""
-style = "bg:surface fg:teal"
-format = " [](fg:surface)[ $symbol( $context) ]($style)[](fg:surface)"
+style = "bg:secondary fg:teal"
+format = "[ $symbol( $context) ]($style)"
 
 [conda]
-symbol = ""
-style = "bg:surface fg:teal"
-format = " [](fg:surface)[ $symbol $environment ]($style)[](fg:surface)"
+style = "bg:secondary fg:teal"
+format = "[ $symbol $environment ]($style)"
 ignore_base = true
 
+# The clock is intentionally removed from every mode. Do not re-enable it.
 [time]
-disabled = false
-time_format = "%R"
-style = "bg:surface fg:muted"
-format = " [](fg:surface)[  $time ]($style)[](fg:surface)"
+disabled = true
 
 [cmd_duration]
-disabled = false
-min_time = 1000
+min_time = 2000
 show_milliseconds = false
 style = "fg:muted"
-format = " [ $duration]($style)"
-show_notifications = true
-min_time_to_notify = 45000
+format = "[  $duration]($style)"
 
 [line_break]
 disabled = false
+
+# The exit code appears only after a failing command; success stays clean and is
+# signalled by the green prompt character alone.
+[status]
+disabled = false
+success_symbol = ""
+symbol = "✘ "
+not_executable_symbol = "✘ "
+not_found_symbol = "✘ "
+sigint_symbol = "✘ "
+signal_symbol = "✘ "
+format = "[$symbol$status ]($style)"
+style = "bold fg:error"
+map_symbol = true
 
 [character]
 disabled = false

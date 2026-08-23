@@ -864,6 +864,15 @@ EOF
   gl log graph     gb/gba branch        gsw/gsc switch          gr/grs restore
   gf fetch/prune   gp push              gpf force-with-lease    gup ff-only pull
   gw worktree      gwl list worktrees   gwa add worktree
+
+  Prompt Git indicators (shown only when they apply):
+    ⇡N  N commits to push          ⇣N  N commits to pull
+    ⇕⇡A⇣B  branch diverged         =N  N merge conflicts
+    +N  N staged                   !N  N modified
+    ?N  N untracked                »N  N renamed
+    ✘N  N deleted                  *N  N stashed
+  A clean branch shows its name alone. Green means progress, amber a dirty
+  tree, red a conflict, divergence, or deletion.
 EOF
             ;;
         shell)

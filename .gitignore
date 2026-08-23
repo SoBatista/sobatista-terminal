@@ -12,6 +12,10 @@ tmp/
 /*-terminal-ai-setup.sh
 /docs/assets/screenshots/*.tmp.*
 
+# Loose screenshot captures at the repo root are working artifacts; reviewed
+# screenshots live under docs/assets/screenshots/ and are added explicitly.
+/*.png
+
 # Shell history and session material
 .bash_history
 .zsh_history

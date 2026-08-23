@@ -144,5 +144,17 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"
 
 complete -W 'keys ai git shell updates security discovery' termhelp th 2>/dev/null || true
 
+# Prompt identity. The Starship prompt reads SOBATISTA_PROMPT_IDENTITY so that
+# SOBATISTA_SCREENSHOT_MODE=1 shows a deterministic safe identity in captures
+# without ever exposing the real username or hostname. Normal shells keep the
+# real identity. Enter screenshot mode without eval: `SOBATISTA_SCREENSHOT_MODE=1 exec bash`.
+if [[ ${SOBATISTA_SCREENSHOT_MODE:-0} == 1 ]]; then
+    export SOBATISTA_PROMPT_IDENTITY='sobatista@blackice'
+else
+    _sb_host=${HOSTNAME:-$(uname -n 2>/dev/null || printf 'host')}
+    export SOBATISTA_PROMPT_IDENTITY="${USER:-$(id -un 2>/dev/null || printf 'user')}@${_sb_host%%.*}"
+    unset _sb_host
+fi
+
 # Starship owns the final prompt and therefore initializes last.
 command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
