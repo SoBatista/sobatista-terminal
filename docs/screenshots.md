@@ -59,11 +59,15 @@ the green success prompt character. Hidden/absent: the clock (removed), the real
 username and hostname (replaced by screenshot mode), absolute paths, credentialed
 remotes, notifications, IP addresses, and unrelated files.
 
-Desired filename: `docs/assets/screenshots/hero-black-ice.png`.
+Filename: `docs/assets/screenshots/hero-black-ice.png`.
 
-Suggested alt text: “SoBatista Terminal Black Ice connected prompt in Terminator
-with a safe sobatista@blackice identity, Git status, and a deterministic project
-summary.”
+Alt text: “SoBatista Terminal Black Ice connected prompt in Terminator with a safe
+sobatista@blackice identity, Git status, and a deterministic project summary.”
+
+> [!NOTE]
+> Captured and in the repository. It was reviewed for secrets and private data,
+> cropped to a single pane (the safe identity only), and shown at full opacity
+> for README text contrast. It is wired into the README hero.
 
 ## 2. AI help
 
@@ -158,5 +162,6 @@ For each supplied file:
 5. Add meaningful alt text next to the image in README and this page.
 6. Run link checking and the full test suite.
 
-The screenshots directory intentionally contains no placeholder image. The first
-public image must be the reviewed hero capture.
+The reviewed hero capture (`hero-black-ice.png`) is the first public image and is
+wired into the README. The remaining numbered screenshots are captured the same
+way and added as they are reviewed; no placeholder images are committed.

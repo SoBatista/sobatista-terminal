@@ -101,6 +101,26 @@ printf '@import url("file://%s/.config/terminator/gtk.css");\n' "$HOME" \
 Restart Terminator to apply it. Remove that single `@import` line to revert. The
 rule is scoped to Terminator windows and does not affect other applications.
 
+### Background opacity
+
+The shipped default is a fully opaque solid `#070B0D`. This is deliberate: a
+solid background keeps text at maximum contrast and, in a security context,
+never leaks the desktop behind the terminal into a screen share or screenshot.
+
+If you prefer the subtle "see-through" depth, make the background slightly
+transparent in `[[default]]` of `config/terminator/config` (and your installed
+`~/.config/terminator/config`):
+
+```ini
+    background_type = transparent
+    background_darkness = 0.92
+```
+
+`background_darkness = 0.92` keeps the terminal ~92% opaque (a hint of the
+desktop shows through); lower it further for more transparency. Restart
+Terminator to apply. Prefer the solid default whenever you may share your
+screen. The README hero is captured at full opacity for text contrast.
+
 ## Local shell overrides
 
 The installed files are deliberately complete and replacement-based so rollback

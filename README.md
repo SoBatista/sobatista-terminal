@@ -2,7 +2,7 @@
 
 # ❄ SoBatista Terminal
 
-### Black Ice for Bash, Terminator, local AI, and Codex
+<p><em>Black Ice for Bash, Terminator, local AI, and Codex</em></p>
 
 A restrained, recoverable Linux terminal environment for engineering and
 authorized security work.
@@ -12,14 +12,19 @@ authorized security work.
 [![Release](https://img.shields.io/badge/version-0.1.0-00E68A)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5EEBFF.svg)](LICENSE)
 
+<br>
+
+![SoBatista Terminal Black Ice connected prompt in Terminator: a safe sobatista@blackice identity, the shortened sobatista-terminal directory, the feat/0.1.0-production-foundation Git branch, and the deterministic capture-demo project summary on a solid near-black background.](docs/assets/screenshots/hero-black-ice.png)
+
 </div>
 
 Version: `0.1.0`
 
 > [!NOTE]
-> The hero image will be added only after a real, sanitized capture from the
-> configured Terminator environment. The project does not fabricate terminal
-> screenshots. See [the capture workflow](docs/screenshots.md).
+> Screenshots are real, sanitized captures from the configured Terminator
+> environment; this project never fabricates terminal images. The hero above
+> uses [screenshot mode](docs/customization.md#safe-screenshot-identity) for a
+> safe identity. See [the capture workflow](docs/screenshots.md).
 
 ## Why this setup
 
