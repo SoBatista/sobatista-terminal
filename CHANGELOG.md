@@ -7,12 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.1.2] - 2026-08-24
+## [0.1.3] - 2026-08-24
+
+### Changed
 
 - `actions/checkout` in the release-verification workflow moves from `v6.0.2` to
   `v7.0.1`, pinned to digest `3d3c42e5aac5ba805825da76410c181273ba90b1`. It was
   the last call site still on `v6.0.2`, so every workflow now checks out with
   the same reviewed digest.
+
+## [0.1.2] - 2026-08-24
+
+### Fixed
 
 - Kept the link check honest when a third-party host stops answering. Two pushes
   to `main` two minutes apart checked the same 35 links: the first finished in
