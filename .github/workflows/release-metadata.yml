@@ -1,0 +1,62 @@
+name: Release metadata
+
+on:
+  pull_request:
+    # `labeled`/`unlabeled` extend the default (opened, synchronize, reopened)
+    # because applying the release:* label after the pull request opened has to
+    # re-evaluate this check. Labelling does not retrigger a workflow that does
+    # not subscribe to it, so without these a late label left a stale failing
+    # check that only a manual rerun or an unrelated push could clear.
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  # Serialised per pull request and never cancelled. Opening a pull request
+  # that already carries its release:* label fires `opened` and `labeled`
+  # within the same second; cancelling either one would leave a cancelled
+  # check run on the head commit that nothing re-evaluates. Both runs read the
+  # labels live from the API below, so they cannot reach different verdicts —
+  # running both to completion is a few seconds, and it is honest.
+  group: release-metadata-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  release-metadata:
+    name: release metadata
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out pull request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch the pull request base ref
+        run: |
+          git fetch --no-tags origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: Validate one exact SemVer increment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          # The labels come from the API, not from
+          # github.event.pull_request.labels: that field is a snapshot taken
+          # when the event fired, so the `opened` run of a pull request created
+          # with its label would judge it label-less and fail. Reading the live
+          # list makes every run of this workflow agree on the same answer.
+          RELEASE_LABELS=$(gh api "repos/$REPOSITORY/pulls/$PR_NUMBER" \
+            --jq '[.labels[].name] | join(",")')
+          export RELEASE_LABELS
+          printf 'Labels on the pull request: %s\n' "${RELEASE_LABELS:-(none)}"
+          scripts/check-version.sh --pr "origin/${{ github.base_ref }}"
