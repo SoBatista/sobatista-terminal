@@ -27,6 +27,16 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Pointed the Code of Conduct attribution at the Contributor Covenant address
   the site actually serves, removing a `301` hop and halving the requests this
   repository makes to the host that timed out.
+- Stopped CI cancelling itself into a permanent failure. Opening a pull request
+  with its `release:*` label already applied fires `opened` and `labeled` in the
+  same second; both landed in one CI concurrency group, `cancel-in-progress`
+  killed the first, and the cancelled `quality` check run stayed on the head
+  commit as a non-success that nothing re-evaluates. The pull request then read
+  as failing with every job that finished green. Label events now belong to a
+  separate `Release metadata` workflow, which does not cancel and reads the
+  labels from the API instead of the event payload, so its concurrent runs
+  cannot reach different verdicts. CI keeps the default pull-request events, so
+  one push produces exactly one run of `quality` and the smoke jobs.
 
 ## [0.1.1] - 2026-08-23
 

@@ -1,20 +1,15 @@
 name: CI
 
 on:
+  # Label events are deliberately absent. They belong to the release-metadata
+  # workflow, the only check that reads labels. Subscribing this workflow to
+  # them fired a second run into the same concurrency group the moment a pull
+  # request was opened with its release:* label already applied, and
+  # cancel-in-progress killed the first — leaving a cancelled `quality` check
+  # run on the head commit. A cancelled run of a required context is not a
+  # success, nothing re-evaluates it, and the pull request reads as failing
+  # even though every job that finished had passed.
   pull_request:
-    # `labeled`/`unlabeled` are added to the default
-    # (opened, synchronize, reopened) because the release-metadata job reads
-    # github.event.pull_request.labels, which is a snapshot taken when the event
-    # fired. Applying the required release:* label after opening the pull
-    # request therefore left a stale failing check that nothing re-evaluated:
-    # labelling does not retrigger a workflow that does not subscribe to it, so
-    # it could only be cleared by a manual rerun or an unrelated push.
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
-      - unlabeled
   push:
     branches:
       - main
@@ -86,27 +81,6 @@ jobs:
             --workdir /repo \
             lycheeverse/lychee:0.24.2@sha256:e2d19e57cf6ab037026f20b8e449a1f30d9d7f81eef4194763aab2eab20bd28d \
             --config .lychee.toml --no-progress .
-
-  release-metadata:
-    name: release metadata
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out pull request head
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Fetch the pull request base ref
-        run: |
-          git fetch --no-tags origin \
-            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
-
-      - name: Validate one exact SemVer increment
-        env:
-          RELEASE_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: scripts/check-version.sh --pr "origin/${{ github.base_ref }}"
 
   distro-smoke:
     name: smoke (${{ matrix.name }})
